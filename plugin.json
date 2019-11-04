@@ -1,0 +1,13 @@
+{
+    "id": "amazon-comprehend",
+    "version": "1.0.0",
+    "meta": {
+        "label": "Amazon Comprehend",
+        "description": "Use AWS to process texts (sentiment analysis, named entities recognition, text summarization). No training required.",
+        "author": "Dataiku",
+        "icon": "icon-cloud",
+        "licenseInfo": "Apache Software License",
+        "url": "https://www.dataiku.com/dss/plugins/info/amazon-comprehend.html",
+        "tags": ["AWS", "Cloud", "NLP"]
+    }
+}

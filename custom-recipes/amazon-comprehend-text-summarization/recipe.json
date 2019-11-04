@@ -1,0 +1,52 @@
+{
+    "meta": {
+        "label": "Text Summarization",
+        "description": "Detect key phrases in text",
+        "icon": "icon-filter",
+        "iconColor": "orange"
+    },
+    "kind": "PYTHON",
+    "selectableFromDataset": "input-dataset",
+    "inputRoles": [
+        {
+            "name": "input-dataset",
+            "label": "Input Dataset",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+    "outputRoles": [
+        {
+            "name": "output-dataset",
+            "label": "Output Dataset",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+    "params": [
+        {
+            "name": "connectionInfo",
+            "label": "AWS Connection",
+            "type": "PRESET",
+            "parameterSetId" : "amazon-comprehend-connection-info",
+            "mandatory" : true
+        },
+        {
+            "name": "text_column",
+            "label": "Input Text Column",
+            "type": "COLUMN",
+            "columnRole": "input-dataset",
+            "mandatory": true
+        },
+        {
+            "name": "language_column",
+            "label": "Language Column",
+            "type": "COLUMN",
+            "columnRole": "input-dataset",
+            "description": "Optional. Should contain the language in ISO 639-1 format (empty = English)",
+            "mandatory": false
+        }
+    ]
+}
