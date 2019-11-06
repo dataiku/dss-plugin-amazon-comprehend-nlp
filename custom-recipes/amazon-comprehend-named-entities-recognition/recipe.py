@@ -2,7 +2,7 @@ import logging
 import collections
 import dataiku
 from dataiku.customrecipe import *
-from dku_aws import generate_unique, aws_client, group_by_language
+from dku_amazon_comprehend import generate_unique, aws_client, group_by_language
 
 BATCH_SIZE = 10
 

@@ -2,8 +2,8 @@ import collections
 import boto3
 import pandas as pd
 
-def aws_client(service_name, connection_info):
-    return boto3.client(service_name=service_name, aws_access_key_id=connection_info.get('accessKey'), aws_secret_access_key=connection_info.get('secretKey'), region_name=connection_info.get('region'))
+def get_client(connection_info):
+    return boto3.client(service_name='comprehend', aws_access_key_id=connection_info.get('accessKey'), aws_secret_access_key=connection_info.get('secretKey'), region_name=connection_info.get('region'))
 
 def generate_unique(name, existing_names):
     new_name = name

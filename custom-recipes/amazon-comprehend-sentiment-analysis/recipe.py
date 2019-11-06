@@ -2,7 +2,7 @@ import logging
 import collections
 import dataiku
 from dataiku.customrecipe import *
-from dku_aws import aws_client, group_by_language, generate_unique
+from dku_amazon_comprehend import *
 
 BATCH_SIZE = 10
 
@@ -27,6 +27,8 @@ input_columns_names = [col['name'] for col in input_schema]
 
 output_dataset = dataiku.Dataset(output_dataset_name)
 
+client = get_client(connection_info)
+
 #==============================================================================
 # RUN
 #==============================================================================
@@ -41,14 +43,12 @@ output_dataset.write_schema(output_schema)
 
 writer = output_dataset.get_writer()
 
-comprehend = aws_client('comprehend', connection_info)
-
 for batch in input_dataset.iter_dataframes(chunksize=BATCH_SIZE):
     batch = batch.reset_index()
     text_by_language, original_indices_by_language = group_by_language(batch, text_column, language_column)
     results_per_language = collections.defaultdict(list)
     for language, request in text_by_language.items():
-        re = comprehend.batch_detect_sentiment(TextList=request, LanguageCode=language)
+        re = client.batch_detect_sentiment(TextList=request, LanguageCode=language)
         results_per_language[language] = re.get('ResultList')
     result_per_row = [None] * len(batch)
     for language, original_indices in original_indices_by_language.items():
