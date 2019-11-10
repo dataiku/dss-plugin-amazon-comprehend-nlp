@@ -8,6 +8,7 @@
         "icon": "icon-cloud",
         "licenseInfo": "Apache Software License",
         "url": "https://www.dataiku.com/dss/plugins/info/amazon-comprehend.html",
-        "tags": ["AWS", "Cloud", "NLP"]
+        "tags": ["AWS", "Cloud", "NLP"],
+        "supportLevel": "NOT_SUPPORTED"
     }
 }

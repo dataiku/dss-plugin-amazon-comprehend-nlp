@@ -47,6 +47,11 @@
             "columnRole": "input-dataset",
             "description": "Optional. Should contain the language in ISO 639-1 format (empty = English)",
             "mandatory": false
+        },
+        {
+            "name": "should_output_raw_results",
+            "label": "Output Raw Response?",
+            "type": "BOOLEAN"
         }
     ]
 }

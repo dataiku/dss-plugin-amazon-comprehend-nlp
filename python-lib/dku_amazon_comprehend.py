@@ -5,14 +5,6 @@ import pandas as pd
 def get_client(connection_info):
     return boto3.client(service_name='comprehend', aws_access_key_id=connection_info.get('accessKey'), aws_secret_access_key=connection_info.get('secretKey'), region_name=connection_info.get('region'))
 
-def generate_unique(name, existing_names):
-    new_name = name
-    for j in range(1, 1000):
-        if new_name not in existing_names:
-            return new_name
-        new_name = name + "_{}".format(j)
-    raise Exception("Failed to generated a unique name")
-
 def group_by_language(batch, text_column, language_column):
     text_by_language = collections.defaultdict(list)
     original_index_by_language = collections.defaultdict(list)
@@ -34,3 +26,28 @@ def group_by_language(batch, text_column, language_column):
             text_by_language['en'].append(' ')
             original_index_by_language['en'].append(index)
     return text_by_language, original_index_by_language
+
+def batch_detect_sentiment(batch, client, text_column, language_column):
+    text_by_language, original_indices_by_language = group_by_language(batch, text_column, language_column)
+    results_per_language = collections.defaultdict(list)
+    for language, request in text_by_language.items():
+        re = client.batch_detect_sentiment(TextList=request, LanguageCode=language)
+        results_per_language[language] = re.get('ResultList')
+    result_per_row = [None] * len(batch)
+    for language, original_indices in original_indices_by_language.items():
+        for i, original_index in enumerate(original_indices):
+            result_per_row[original_index] = results_per_language[language][i]
+
+    output_rows = []
+    for original_index, row in batch.iterrows():
+        text = row[text_column]
+        result = result_per_row[original_index]
+        if text:
+            sentiment = result.get('Sentiment').lower()
+            row[predicted_sentiment_column] = sentiment
+            if output_probabilities:
+                row[predicted_probability_column] = result.get('SentimentScore',{}).get(sentiment.capitalize())
+            if should_output_raw_results:
+                row["raw_results"] = json.dumps(result)
+        output_rows.append(row)
+    return output_rows

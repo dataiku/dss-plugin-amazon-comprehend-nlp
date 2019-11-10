@@ -2,20 +2,21 @@ import logging
 import collections
 import dataiku
 from dataiku.customrecipe import *
-from dku_amazon_comprehend import generate_unique, aws_client
+from common import *
+from dku_amazon_comprehend import *
 
 BATCH_SIZE = 10
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='aws-machine-learning plugin %(levelname)s - %(message)s')
 
 #==============================================================================
 # SETUP
 #==============================================================================
 
+logging.basicConfig(level=logging.INFO, format='[comprehend plugin] %(levelname)s - %(message)s')
+
 connection_info = get_recipe_config().get('connectionInfo', {})
 text_column = get_recipe_config().get('text_column', None)
 language_column = get_recipe_config().get('language_column', 'en')
+should_output_raw_results = get_recipe_config().get('should_output_raw_results')
 
 input_dataset_name = get_input_names_for_role('input-dataset')[0]
 input_dataset = dataiku.Dataset(input_dataset_name)
@@ -23,6 +24,8 @@ input_schema = input_dataset.read_schema()
 
 output_dataset_name = get_output_names_for_role('output-dataset')[0]
 output_dataset = dataiku.Dataset(output_dataset_name)
+
+client = get_client(connection_info)
 
 #==============================================================================
 # RUN
@@ -32,9 +35,9 @@ output_schema = input_schema
 output_column_name = generate_unique(text_column + "_summary", [col['name'] for col in input_schema])
 output_schema.append({'name': output_column_name, 'type':'string'},)
 output_dataset.write_schema(output_schema)
+if should_output_raw_results:
+    output_schema.append({"name": "raw_results", "type": "string"})
 writer = output_dataset.get_writer()
-
-comprehend = aws_client('comprehend', connection_info)
 
 for batch in input_dataset.iter_dataframes(chunksize=BATCH_SIZE):
     request_data = collections.defaultdict(list)
@@ -57,7 +60,7 @@ for batch in input_dataset.iter_dataframes(chunksize=BATCH_SIZE):
 
     dct = collections.defaultdict(list)
     for language, request in request_data.items():
-        re = comprehend.batch_detect_key_phrases(TextList=request, LanguageCode=language)
+        re = client.batch_detect_key_phrases(TextList=request, LanguageCode=language)
         r = re.get('ResultList')
         dct[language] = r
     df_list = [None] * len(batch)
