@@ -6,10 +6,10 @@
         "iconColor": "orange"
     },
     "kind": "PYTHON",
-    "selectableFromDataset": "input-dataset",
+    "selectableFromDataset": "input_dataset",
     "inputRoles": [
         {
-            "name": "input-dataset",
+            "name": "input_dataset",
             "label": "Input Dataset",
             "arity": "UNARY",
             "required": true,
@@ -18,7 +18,7 @@
     ],
     "outputRoles": [
         {
-            "name": "output-dataset",
+            "name": "output_dataset",
             "label": "Output Dataset",
             "arity": "UNARY",
             "required": true,
@@ -37,21 +37,22 @@
             "name": "text_column",
             "label": "Input Text Column",
             "type": "COLUMN",
-            "columnRole": "input-dataset",
+            "columnRole": "input_dataset",
             "mandatory": true
         },
         {
-            "name": "language_column",
-            "label": "Language Column",
+            "name": "language",
+            "label": "Language",
             "type": "COLUMN",
-            "columnRole": "input-dataset",
-            "description": "Should contain the language in ISO 639-1 format (empty = English)",
-            "mandatory": false
+            "columnRole": "input_dataset",
+            "description": "in ISO 639-1 format (empty = en)",
+            "mandatory": false,
+            "defaultValue": "en"
         },
         {
-            "name": "output_probabilities",
+            "name": "output_probability",
             "type": "BOOLEAN",
-            "label": "Output probabilities",
+            "label": "Output probability",
             "defaultValue": true
         },
         {

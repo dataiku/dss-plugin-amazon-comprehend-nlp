@@ -1,8 +1,8 @@
 {
     "meta": {
-        "label": "Named Entities Recognition",
-        "description": "Identify “real-world objects” (i.e. People names, Dates, Places, etc) in texts",
-        "icon": "icon-tags",
+        "label": "Key Phrases Extraction",
+        "description": "Detect key phrases (typically one to four words each) in texts to easily identify the main points",
+        "icon": "icon-lightbulb",
         "iconColor": "orange"
     },
     "kind": "PYTHON",
@@ -48,17 +48,6 @@
             "description": "in ISO 639-1 format (empty = en)",
             "mandatory": false,
             "defaultValue": "en"
-        },
-        {
-            "name": "output_format",
-            "label": "Output Format",
-            "type": "SELECT",
-            "selectChoices": [
-                {"value": "single_column", "label": "A single JSON column"},
-                {"value": "multiple_columns", "label": "One colum per entity type"}
-            ],
-            "defaultValue": "single_column",
-            "mandatory": true
         },
         {
             "name": "should_output_raw_results",

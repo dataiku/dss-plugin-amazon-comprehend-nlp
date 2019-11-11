@@ -1,53 +1,55 @@
-import collections
 import boto3
-import pandas as pd
+
+BATCH_SIZE = 20
+PARALLELISM = 20
+ALL_ENTITY_TYPES = ['COMMERCIAL_ITEM', 'DATE', 'EVENT', 'LOCATION', 'ORGANIZATION', 'OTHER', 'PERSON', 'QUANTITY', 'TITLE']
 
 def get_client(connection_info):
     return boto3.client(service_name='comprehend', aws_access_key_id=connection_info.get('accessKey'), aws_secret_access_key=connection_info.get('secretKey'), region_name=connection_info.get('region'))
 
-def group_by_language(batch, text_column, language_column):
-    text_by_language = collections.defaultdict(list)
-    original_index_by_language = collections.defaultdict(list)
-    for index, row in batch.iterrows():
-        text = row.get(text_column, '')
-        if pd.isna(text):
-            text = ''
-        language = row.get(language_column)
-        if text != '' and language:
-            text_by_language[language].append(text)
-            original_index_by_language[language].append(index)
-        elif text == '' and language:
-            text_by_language[language].append(' ')
-            original_index_by_language[language].append(index)
-        elif text != '' and not language:
-            text_by_language['en'].append(text)
-            original_index_by_language['en'].append(index)
-        else:
-            text_by_language['en'].append(' ')
-            original_index_by_language['en'].append(index)
-    return text_by_language, original_index_by_language
+def format_sentiment_results(raw_results):
+    sentiment = raw_results.get('Sentiment').lower()
+    output_row = dict()
+    output_row["raw_results"] = raw_results
+    output_row["predicted_sentiment"] = sentiment
+    score = raw_results.get('SentimentScore',{}).get(sentiment.capitalize())
+    output_row["predicted_probability"] = round(score, 2)
+    return output_row
 
-def batch_detect_sentiment(batch, client, text_column, language_column):
-    text_by_language, original_indices_by_language = group_by_language(batch, text_column, language_column)
-    results_per_language = collections.defaultdict(list)
-    for language, request in text_by_language.items():
-        re = client.batch_detect_sentiment(TextList=request, LanguageCode=language)
-        results_per_language[language] = re.get('ResultList')
-    result_per_row = [None] * len(batch)
-    for language, original_indices in original_indices_by_language.items():
-        for i, original_index in enumerate(original_indices):
-            result_per_row[original_index] = results_per_language[language][i]
+def format_language_results(raw_results):
+    output_row = dict()
+    output_row["raw_results"] = raw_results
+    if len(raw_results.get('Languages')):
+        language = raw_results.get('Languages')[0]
+        output_row["detected_language"] = language['LanguageCode']
+        output_row["probability"] = round(language['Score'], 2)
+    else:
+        output_row["detected_language"] = ''
+        output_row["probability"] = ''
+    return output_row
 
-    output_rows = []
-    for original_index, row in batch.iterrows():
-        text = row[text_column]
-        result = result_per_row[original_index]
-        if text:
-            sentiment = result.get('Sentiment').lower()
-            row[predicted_sentiment_column] = sentiment
-            if output_probabilities:
-                row[predicted_probability_column] = result.get('SentimentScore',{}).get(sentiment.capitalize())
-            if should_output_raw_results:
-                row["raw_results"] = json.dumps(result)
-        output_rows.append(row)
-    return output_rows
+def format_keyphrases_results(raw_results):
+    output_row = dict()
+    output_row["raw_results"] = raw_results
+    output_row["keyphrases"] = _distinct([kp["Text"] for kp in raw_results.get("KeyPhrases", [])])
+    return output_row
+
+def format_entities_results(raw_results):
+    output_row = dict()
+    output_row["raw_results"] = raw_results
+    output_row["entities"] = [_format_entity(e) for e in raw_results.get("Entities", [])]
+    for t in ALL_ENTITY_TYPES:
+        output_row[t] = _distinct([e["text"] for e in output_row["entities"] if e["type"] == t])
+    return output_row
+
+def _format_entity(e):
+    return {
+        "type": e.get("Type"),
+        "text": e.get("Text"),
+        "score": e.get("Score"),
+        "beginOffset": e.get("BeginOffset"),
+        "endOffset": e.get("EndOffset"),
+    }
+
+def _distinct(l):
+    return list(dict.fromkeys(l))
