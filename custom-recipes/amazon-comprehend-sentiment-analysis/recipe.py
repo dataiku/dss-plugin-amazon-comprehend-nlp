@@ -33,8 +33,6 @@ if text_column is None or len(text_column) == 0:
 if text_column not in input_columns_names:
     raise ValueError("Column '{}' is not present in the input dataset".format(text_column))
 
-client = get_client(connection_info)
-
 #==============================================================================
 # RUN
 #==============================================================================
@@ -43,6 +41,7 @@ input_df = input_dataset.get_dataframe()
 
 @with_original_indices
 def detect_sentiment(text_list):
+    client = get_client(connection_info)
     logging.info("request: %d items / %d characters" % (len(text_list), sum([len(t) for t in text_list])))
     start = time.time()
     response = client.batch_detect_sentiment(TextList=text_list, LanguageCode=language)

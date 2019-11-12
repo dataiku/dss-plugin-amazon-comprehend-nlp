@@ -1,7 +1,5 @@
 import boto3
 
-BATCH_SIZE = 20
-PARALLELISM = 20
 ALL_ENTITY_TYPES = ['COMMERCIAL_ITEM', 'DATE', 'EVENT', 'LOCATION', 'ORGANIZATION', 'OTHER', 'PERSON', 'QUANTITY', 'TITLE']
 
 def get_client(connection_info):
@@ -21,8 +19,8 @@ def format_language_results(raw_results):
     output_row["raw_results"] = raw_results
     if len(raw_results.get('Languages')):
         language = raw_results.get('Languages')[0]
-        output_row["detected_language"] = language['LanguageCode']
-        output_row["probability"] = round(language['Score'], 2)
+        output_row["detected_language"] = language.get('LanguageCode')
+        output_row["probability"] = round(language.get('Score'), 2)
     else:
         output_row["detected_language"] = ''
         output_row["probability"] = ''
