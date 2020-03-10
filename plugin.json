@@ -1,11 +1,11 @@
 {
     "id": "amazon-comprehend",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "meta": {
         "label": "Amazon Comprehend",
-        "description": "Use AWS to process texts (sentiment analysis, named entities recognition, text summarization). No training required.",
-        "author": "Dataiku",
-        "icon": "icon-cloud",
+        "description": "Use Amazon Comprehend APIs to perform Language Detection, Sentiment Analysis, Named Entity Recognition and Keyphrashe Extraction",
+        "author": "Dataiku (Joachim ZENTICI and Alex COMBESSIE)",
+        "icon": "icon-DKU_amazon-comprehend icon-cloud",
         "licenseInfo": "Apache Software License",
         "url": "https://www.dataiku.com/dss/plugins/info/amazon-comprehend.html",
         "tags": ["AWS", "Cloud", "NLP"],

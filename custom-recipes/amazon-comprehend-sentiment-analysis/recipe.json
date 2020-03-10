@@ -2,8 +2,7 @@
     "meta": {
         "label": "Sentiment Analysis",
         "description": "Estimate the sentiment polarity of a text (positive, negative, neutral or mixed)",
-        "icon": "icon-star-half-full",
-        "iconColor": "orange"
+        "icon": "icon-DKU_amazon-comprehend icon-cloud"
     },
     "kind": "PYTHON",
     "selectableFromDataset": "input_dataset",

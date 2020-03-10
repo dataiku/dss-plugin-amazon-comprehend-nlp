@@ -2,8 +2,7 @@
     "meta": {
         "label": "Key Phrases Extraction",
         "description": "Detect key phrases (typically one to four words each) in texts to easily identify the main points",
-        "icon": "icon-lightbulb",
-        "iconColor": "orange"
+        "icon": "icon-DKU_amazon-comprehend icon-cloud"
     },
     "kind": "PYTHON",
     "selectableFromDataset": "input_dataset",
