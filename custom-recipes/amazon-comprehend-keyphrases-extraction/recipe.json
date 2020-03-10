@@ -1,7 +1,7 @@
 {
     "meta": {
-        "label": "Key Phrases Extraction",
-        "description": "Detect key phrases (typically one to four words each) in texts to easily identify the main points",
+        "label": "Key Phrase Extraction",
+        "description": "Extract key phrases (typically 1-4 words each) in a text to identify the main points",
         "icon": "icon-DKU_amazon-comprehend icon-cloud"
     },
     "kind": "PYTHON",

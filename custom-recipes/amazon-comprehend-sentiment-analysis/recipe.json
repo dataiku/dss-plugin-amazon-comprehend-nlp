@@ -1,7 +1,7 @@
 {
     "meta": {
         "label": "Sentiment Analysis",
-        "description": "Estimate the sentiment polarity of a text (positive, negative, neutral or mixed)",
+        "description": "Analyze the sentiment polarity (positive, negative, neutral) of a text",
         "icon": "icon-DKU_amazon-comprehend icon-cloud"
     },
     "kind": "PYTHON",

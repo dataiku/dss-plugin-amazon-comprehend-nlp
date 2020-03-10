@@ -1,7 +1,7 @@
 {
     "meta": {
-        "label": "Named Entities Recognition",
-        "description": "Identify “real-world objects” (i.e. People names, Dates, Places, etc) in texts",
+        "label": "Named Entity Recognition",
+        "description": "Recognize “real-world objects” (people names, dates, places, etc.) in a text",
         "icon": "icon-DKU_amazon-comprehend icon-cloud"
     },
     "kind": "PYTHON",

@@ -3,8 +3,8 @@
         "label": "Cloud credentials",
         "icon": "icon-gcp-natural-language-api icon-cloud"
     },
-    "defaultDefinableInline": false,
     "defaultDefinableAtProjectLevel": true,
+    "defaultDefinableInline": false,
     "params": [
         {
             "name": "accessKey",
