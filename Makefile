@@ -1,5 +1,5 @@
-PLUGIN_VERSION=1.0.1
-PLUGIN_ID=amazon-comprehend
+PLUGIN_VERSION=1.1.0
+PLUGIN_ID=amazon-comprehend-nlp
 
 plugin:
 	cat plugin.json|json_pp > /dev/null
