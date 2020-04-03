@@ -1,0 +1,163 @@
+{
+    "meta": {
+        "label": "Sentiment Analysis",
+        "description": "Analyze the sentiment polarity (positive, negative, neutral) of a text",
+        "icon": "icon-amazon-comprehend icon-cloud"
+    },
+    "kind": "PYTHON",
+    "selectableFromDataset": "input_dataset",
+    "inputRoles": [
+        {
+            "name": "input_dataset",
+            "label": "Input Dataset",
+            "description": "Dataset containing the text data to analyze",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+    "outputRoles": [
+        {
+            "name": "output_dataset",
+            "label": "Output dataset",
+            "description": "Dataset with enriched output",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+    "params": [
+        {
+            "name": "separator1",
+            "label": "Input Parameters",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "text_column",
+            "label": "Text column",
+            "type": "COLUMN",
+            "columnRole": "input_dataset",
+            "mandatory": true,
+            "allowedColumnTypes": [
+                "string"
+            ]
+        },
+        {
+            "name": "language",
+            "label": "Language",
+            "type": "SELECT",
+            "mandatory": true,
+            "selectChoices": [
+                {
+                    "value": "auto",
+                    "label": "Auto-detect"
+                },
+                {
+                    "value": "zh",
+                    "label": "Chinese (Simplified)"
+                },
+                {
+                    "value": "zh-Hant",
+                    "label": "Chinese (Traditional)"
+                },
+                {
+                    "value": "en",
+                    "label": "English"
+                },
+                {
+                    "value": "fr",
+                    "label": "French"
+                },
+                {
+                    "value": "de",
+                    "label": "German"
+                },
+                {
+                    "value": "it",
+                    "label": "Italian"
+                },
+                {
+                    "value": "ja",
+                    "label": "Japanese"
+                },
+                {
+                    "value": "ko",
+                    "label": "Korean"
+                },
+                {
+                    "value": "pt",
+                    "label": "Portuguese"
+                },
+                {
+                    "value": "es",
+                    "label": "Spanish"
+                }
+            ],
+            "defaultValue": "auto"
+        },
+        {
+            "name": "separator2",
+            "label": "Output Parameters",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "sentiment_scale",
+            "label": "Sentiment scale",
+            "type": "SELECT",
+            "mandatory": true,
+            "selectChoices": [
+                {
+                    "value": "binary",
+                    "label": "Negative / Positive"
+                },
+                {
+                    "value": "ternary",
+                    "label": "Negative / Neutral / Positive"
+                },
+                {
+                    "value": "quinary",
+                    "label": "Highly negative / Negative / Neutral / Positive / Highly positive"
+                },
+                {
+                    "value": "rescale_zero_to_one",
+                    "label": "Number between 0 and 1"
+                },
+                {
+                    "value": "rescale_minusone_to_one",
+                    "label": "Number between -1 and 1"
+                }
+            ],
+            "defaultValue": "ternary"
+        },
+        {
+            "name": "separator3",
+            "label": "Configuration",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "api_configuration_preset",
+            "label": "API configuration preset",
+            "type": "PRESET",
+            "parameterSetId": "api-configuration",
+            "mandatory": true
+        },
+        {
+            "name": "error_handling",
+            "label": "API error handling",
+            "type": "SELECT",
+            "selectChoices": [
+                {
+                    "value": "fail",
+                    "label": "Fail"
+                },
+                {
+                    "value": "warn",
+                    "label": "Warn"
+                }
+            ],
+            "defaultValue": "warn",
+            "mandatory": true
+        }
+    ],
+    "resourceKeys": []
+}

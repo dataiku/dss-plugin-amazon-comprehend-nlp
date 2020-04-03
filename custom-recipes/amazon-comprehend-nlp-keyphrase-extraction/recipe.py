@@ -15,13 +15,14 @@ logging.basicConfig(level=logging.INFO, format='[comprehend plugin] %(levelname)
 
 connection_info = get_recipe_config().get('connectionInfo', {})
 text_column = get_recipe_config().get('text_column')
+language = get_recipe_config().get('language', 'en')
 should_output_raw_results = get_recipe_config().get('should_output_raw_results')
 
 input_dataset_name = get_input_names_for_role('input_dataset')[0]
 input_dataset = dataiku.Dataset(input_dataset_name)
 input_schema = input_dataset.read_schema()
 input_columns_names = [col['name'] for col in input_schema]
-detected_language_column = generate_unique('detected_language', input_columns_names)
+keyphrases_column_name = generate_unique("keyphrases", input_columns_names)
 
 output_dataset_name = get_output_names_for_role('output_dataset')[0]
 output_dataset = dataiku.Dataset(output_dataset_name)
@@ -30,6 +31,8 @@ if text_column is None or len(text_column) == 0:
     raise ValueError("You must specify the input text column")
 if text_column not in input_columns_names:
     raise ValueError("Column '{}' is not present in the input dataset".format(text_column))
+
+
 
 #==============================================================================
 # RUN
@@ -43,8 +46,9 @@ client = get_client(connection_info)
 @retry((RateLimitException, OSError), delay=api_quota_period, tries=5)
 @limits(calls=api_quota_rate_limit, period=api_quota_period)
 @fail_or_warn_on_row(error_handling=error_handling)
-def call_api_language_detection(row, text_column, text_language=None):
+def call_keyphrase_extraction(row, text_column, text_language=None):
     # TODO
+
 
 output_df = api_parallelizer(
     input_df=input_df, api_call_function=call_api_named_entity_recognition,

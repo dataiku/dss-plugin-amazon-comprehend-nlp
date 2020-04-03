@@ -1,10 +1,11 @@
+# -*- coding: utf-8 -*-
 import logging
 import time
 import json
 import dataiku
 from dataiku.customrecipe import *
-from dku_amazon_comprehend import *
-from common import *
+from dku_aws_nlp import *
+from api_calling_utils import *
 
 #==============================================================================
 # SETUP
@@ -38,28 +39,24 @@ if text_column not in input_columns_names:
 #==============================================================================
 
 input_df = input_dataset.get_dataframe()
-
-@with_original_indices
-def detect_sentiment(text_list):
-    client = get_client(connection_info)
-    logging.info("request: %d items / %d characters" % (len(text_list), sum([len(t) for t in text_list])))
-    start = time.time()
-    response = client.batch_detect_sentiment(TextList=text_list, LanguageCode=language)
-    logging.info("request took %.3fs" % (time.time() - start))
-    return response
+response_column = generate_unique("raw_response", input_df.columns)
+client = get_client(gcp_service_account_key)
 
 
-for batch in run_by_batch(detect_sentiment, input_df, text_column, batch_size=BATCH_SIZE, parallelism=PARALLELISM):
-    response, original_indices = batch
-    if len(response.get('ErrorList', [])):
-        logging.error(json.dumps(response.get('ErrorList')))
-    for i, raw_result in enumerate(response.get('ResultList')):
-        j = original_indices[i]
-        output = format_sentiment_results(raw_result)
-        input_df.set_value(j, predicted_sentiment_column, output['predicted_sentiment'])
-        if output_probability:
-            input_df.set_value(j, predicted_probability_column, output['predicted_probability'])
-        if should_output_raw_results:
-            input_df.set_value(j, 'raw_results', json.dumps(output['raw_results']))
+@retry((RateLimitException, OSError), delay=api_quota_period, tries=5)
+@limits(calls=api_quota_rate_limit, period=api_quota_period)
+@fail_or_warn_on_row(error_handling=error_handling)
+def call_api_sentiment_analysis(row, text_column, text_language=None):
+    # TODO
 
-output_dataset.write_with_schema(input_df)
+output_df = api_parallelizer(
+    input_df=input_df, api_call_function=call_api_named_entity_recognition,
+    text_column=text_column, text_language=text_language,
+    entity_sentiment=entity_sentiment, parallel_workers=parallel_workers)
+
+output_df = output_df.apply(
+    func=format_named_entity_recognition, axis=1,
+    response_column=response_column, output_format=output_format,
+    error_handling=error_handling)
+
+output_dataset.write_with_schema(output_df)

@@ -1,0 +1,162 @@
+{
+    "meta": {
+        "label": "Named Entity Recognition",
+        "description": "Recognize “real-world objects” (people names, dates, places, etc.) in a text",
+        "icon": "icon-amazon-comprehend icon-cloud"
+    },
+    "kind": "PYTHON",
+    "selectableFromDataset": "input_dataset",
+    "inputRoles": [
+        {
+            "name": "input_dataset",
+            "label": "Input Dataset",
+            "description": "Dataset containing the text data to analyze",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+    "outputRoles": [
+        {
+            "name": "output_dataset",
+            "label": "Output dataset",
+            "description": "Dataset with enriched output",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+    "params": [
+        {
+            "name": "separator1",
+            "label": "Input Parameters",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "text_column",
+            "label": "Text column",
+            "type": "COLUMN",
+            "columnRole": "input_dataset",
+            "mandatory": true,
+            "allowedColumnTypes": [
+                "string"
+            ]
+        },
+        {
+            "name": "language",
+            "label": "Language",
+            "type": "SELECT",
+            "mandatory": true,
+            "selectChoices": [
+                {
+                    "value": "auto",
+                    "label": "Auto-detect"
+                },
+                {
+                    "value": "zh",
+                    "label": "Chinese (Simplified)"
+                },
+                {
+                    "value": "zh-Hant",
+                    "label": "Chinese (Traditional)"
+                },
+                {
+                    "value": "en",
+                    "label": "English"
+                },
+                {
+                    "value": "fr",
+                    "label": "French"
+                },
+                {
+                    "value": "de",
+                    "label": "German"
+                },
+                {
+                    "value": "it",
+                    "label": "Italian"
+                },
+                {
+                    "value": "ja",
+                    "label": "Japanese"
+                },
+                {
+                    "value": "ko",
+                    "label": "Korean"
+                },
+                {
+                    "value": "pt",
+                    "label": "Portuguese"
+                },
+                {
+                    "value": "ru",
+                    "label": "Russian"
+                },
+                {
+                    "value": "es",
+                    "label": "Spanish"
+                }
+            ],
+            "defaultValue": "auto"
+        },
+        {
+            "name": "separator2",
+            "label": "Output Parameters",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "output_format",
+            "label": "Format",
+            "type": "SELECT",
+            "selectChoices": [
+                {
+                    "value": "single_column",
+                    "label": "Single JSON column "
+                },
+                {
+                    "value": "multiple_columns",
+                    "label": "Multiple columnss by entity type"
+                }
+            ],
+            "defaultValue": "multiple_columns",
+            "mandatory": true
+        },
+        {
+            "name": "entity_sentiment",
+            "label": "Entity sentiment",
+            "description": "Compute at additional cost",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
+            "name": "separator3",
+            "label": "Configuration",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "api_configuration_preset",
+            "label": "API configuration preset",
+            "type": "PRESET",
+            "parameterSetId": "api-configuration",
+            "mandatory": true
+        },
+        {
+            "name": "error_handling",
+            "label": "API error handling",
+            "type": "SELECT",
+            "selectChoices": [
+                {
+                    "value": "fail",
+                    "label": "Fail"
+                },
+                {
+                    "value": "warn",
+                    "label": "Warn"
+                }
+            ],
+            "defaultValue": "warn",
+            "mandatory": true
+        }
+    ],
+    "resourceKeys": []
+}

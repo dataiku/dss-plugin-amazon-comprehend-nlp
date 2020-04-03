@@ -1,0 +1,74 @@
+{
+    "meta": {
+        "label": "API configuration",
+        "icon": "icon-amazon-comprehend icon-cloud"
+    },
+    "defaultDefinableAtProjectLevel": true,
+    "defaultDefinableInline": false,
+    "params": [
+        {
+            "name": "separator1",
+            "label": "Authentication",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "aws_access_key",
+            "label": "AWS access key",
+            "description": "If empty, uses AWS credentials from the environment (IAM role, ~/.aws/credentials or AWS_ACCESS_KEY_ID environment variable)", // noqa
+            "type": "STRING",
+            "mandatory": false
+        },
+        {
+            "name": "aws_secret_key",
+            "label": "AWS secret key",
+            "description": "If empty, uses AWS credentials from the environment (IAM role, ~/.aws/credentials or AWS_SECRET_ACCESS_KEY environment variable)", // noqa
+            "type": "PASSWORD",
+            "mandatory": false
+        },
+        {
+            "name": "aws_region",
+            "label": "AWS region",
+            "description": "If empty, uses AWS region from the environment (~/.aws/config or AWS_DEFAULT_REGION environment variable)", // noqa
+            "type": "STRING",
+            "mandatory": false
+        },
+        {
+            "name": "separator2",
+            "label": "API quota",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "api_quota_rate_limit",
+            "label": "Rate limit",
+            "description": "Maximum number of requests per period for a given DSS activity",
+            "type": "INT",
+            "mandatory": true,
+            "defaultValue": 100,
+            "minI": 1
+        },
+        {
+            "name": "api_quota_period",
+            "label": "Period",
+            "description": "Reset period of the quota in seconds",
+            "type": "INT",
+            "mandatory": true,
+            "defaultValue": 30,
+            "minI": 1
+        },
+        {
+            "name": "separator3",
+            "label": "Performance tuning",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "parallel_workers",
+            "label": "Concurrency",
+            "description": "Maximum number of threads calling the API in parallel",
+            "type": "INT",
+            "mandatory": true,
+            "defaultValue": 4,
+            "minI": 1,
+            "maxI": 100
+        }
+    ]
+}

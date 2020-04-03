@@ -1,8 +1,8 @@
 {
     "meta": {
-        "label": "Named Entity Recognition",
-        "description": "Recognize “real-world objects” (people names, dates, places, etc.) in a text",
-        "icon": "icon-DKU_amazon-comprehend icon-cloud"
+        "label": "Key Phrase Extraction",
+        "description": "Extract key phrases (typically 1-4 words each) in a text to identify the main points",
+        "icon": "icon-amazon-comprehend icon-cloud"
     },
     "kind": "PYTHON",
     "selectableFromDataset": "input_dataset",
@@ -47,17 +47,6 @@
             "description": "in ISO 639-1 format (empty = en)",
             "mandatory": false,
             "defaultValue": "en"
-        },
-        {
-            "name": "output_format",
-            "label": "Output Format",
-            "type": "SELECT",
-            "selectChoices": [
-                {"value": "single_column", "label": "A single JSON column"},
-                {"value": "multiple_columns", "label": "One colum per entity type"}
-            ],
-            "defaultValue": "single_column",
-            "mandatory": true
         },
         {
             "name": "should_output_raw_results",
