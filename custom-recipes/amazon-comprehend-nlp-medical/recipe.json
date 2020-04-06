@@ -1,7 +1,7 @@
 {
     "meta": {
-        "label": "Key Phrase Extraction",
-        "description": "Extract key phrases (1-4 words each) in a text to identify the main points",
+        "label": "Medical Detection",
+        "description": "Detect medical entities (condition, medication, etc.) or Protected Health Information in clinical text",
         "icon": "icon-amazon-comprehend icon-cloud"
     },
     "kind": "PYTHON",
@@ -19,7 +19,7 @@
     "outputRoles": [
         {
             "name": "output_dataset",
-            "label": "Output Dataset",
+            "label": "Output dataset",
             "description": "Dataset with enriched output",
             "arity": "UNARY",
             "required": true,
@@ -43,41 +43,43 @@
             ]
         },
         {
-            "name": "language",
-            "label": "Language",
+            "name": "detection_type",
+            "label": "Detection type",
             "type": "SELECT",
             "mandatory": true,
             "selectChoices": [
                 {
-                    "value": "auto",
-                    "label": "Auto-detect"
+                    "value": "medical",
+                    "label": "Medical entities"
                 },
                 {
-                    "value": "en",
-                    "label": "English"
-                },
-                {
-                    "value": "fr",
-                    "label": "French"
-                },
-                {
-                    "value": "de",
-                    "label": "German"
-                },
-                {
-                    "value": "it",
-                    "label": "Italian"
-                },
-                {
-                    "value": "pt",
-                    "label": "Portuguese"
-                },
-                {
-                    "value": "es",
-                    "label": "Spanish"
+                    "value": "phi",
+                    "label": "Protected Health Information"
                 }
             ],
-            "defaultValue": "auto"
+            "defaultValue": "medical"
+        },
+        {
+            "name": "separator2",
+            "label": "Output Parameters",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "output_format",
+            "label": "Format",
+            "type": "SELECT",
+            "selectChoices": [
+                {
+                    "value": "single_column",
+                    "label": "Single JSON column "
+                },
+                {
+                    "value": "multiple_columns",
+                    "label": "Multiple columns by entity type"
+                }
+            ],
+            "defaultValue": "multiple_columns",
+            "mandatory": true
         },
         {
             "name": "separator3",
@@ -108,5 +110,6 @@
             "defaultValue": "warn",
             "mandatory": true
         }
-    ]
+    ],
+    "resourceKeys": []
 }

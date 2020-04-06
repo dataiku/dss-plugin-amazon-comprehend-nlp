@@ -9,26 +9,27 @@
         {
             "name": "separator1",
             "label": "Authentication",
+            "description": "Please refer to the AWS documentation: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html.",
             "type": "SEPARATOR"
         },
         {
             "name": "aws_access_key",
-            "label": "AWS access key",
-            "description": "If empty, uses AWS credentials from the environment (IAM role, ~/.aws/credentials or AWS_ACCESS_KEY_ID environment variable)", // noqa
+            "label": "AWS access key ID",
+            "description": "If empty, attempts to ascertain credentials from the environment.", 
             "type": "STRING",
             "mandatory": false
         },
         {
             "name": "aws_secret_key",
-            "label": "AWS secret key",
-            "description": "If empty, uses AWS credentials from the environment (IAM role, ~/.aws/credentials or AWS_SECRET_ACCESS_KEY environment variable)", // noqa
+            "label": "AWS secret access key",
+            "description": "If empty, attempts to ascertain credentials from the environment.",
             "type": "PASSWORD",
             "mandatory": false
         },
         {
             "name": "aws_region",
             "label": "AWS region",
-            "description": "If empty, uses AWS region from the environment (~/.aws/config or AWS_DEFAULT_REGION environment variable)", // noqa
+            "description": "If empty, attempts to ascertain region name from the environment.", 
             "type": "STRING",
             "mandatory": false
         },

@@ -53,14 +53,6 @@
                     "label": "Auto-detect"
                 },
                 {
-                    "value": "zh",
-                    "label": "Chinese (Simplified)"
-                },
-                {
-                    "value": "zh-Hant",
-                    "label": "Chinese (Traditional)"
-                },
-                {
                     "value": "en",
                     "label": "English"
                 },
@@ -77,20 +69,8 @@
                     "label": "Italian"
                 },
                 {
-                    "value": "ja",
-                    "label": "Japanese"
-                },
-                {
-                    "value": "ko",
-                    "label": "Korean"
-                },
-                {
                     "value": "pt",
                     "label": "Portuguese"
-                },
-                {
-                    "value": "ru",
-                    "label": "Russian"
                 },
                 {
                     "value": "es",
@@ -115,18 +95,11 @@
                 },
                 {
                     "value": "multiple_columns",
-                    "label": "Multiple columnss by entity type"
+                    "label": "Multiple columns by entity type"
                 }
             ],
             "defaultValue": "multiple_columns",
             "mandatory": true
-        },
-        {
-            "name": "entity_sentiment",
-            "label": "Entity sentiment",
-            "description": "Compute at additional cost",
-            "type": "BOOLEAN",
-            "defaultValue": false
         },
         {
             "name": "separator3",

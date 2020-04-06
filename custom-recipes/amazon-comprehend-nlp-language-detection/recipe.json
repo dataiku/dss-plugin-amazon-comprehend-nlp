@@ -10,6 +10,7 @@
         {
             "name": "input_dataset",
             "label": "Input Dataset",
+            "description": "Dataset containing the text data to analyze",
             "arity": "UNARY",
             "required": true,
             "acceptsDataset": true
@@ -19,6 +20,7 @@
         {
             "name": "output_dataset",
             "label": "Output Dataset",
+            "description": "Dataset with enriched output",
             "arity": "UNARY",
             "required": true,
             "acceptsDataset": true
@@ -26,23 +28,48 @@
     ],
     "params": [
         {
-            "name": "connectionInfo",
-            "label": "AWS Connection",
-            "type": "PRESET",
-            "parameterSetId" : "amazon-comprehend-connection-info",
-            "mandatory" : true
+            "name": "separator1",
+            "label": "Input Parameters",
+            "type": "SEPARATOR"
         },
         {
             "name": "text_column",
-            "label": "Input Text Column",
+            "label": "Text column",
             "type": "COLUMN",
             "columnRole": "input_dataset",
+            "mandatory": true,
+            "allowedColumnTypes": [
+                "string"
+            ]
+        },
+        {
+            "name": "separator3",
+            "label": "Configuration",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "api_configuration_preset",
+            "label": "API configuration preset",
+            "type": "PRESET",
+            "parameterSetId": "api-configuration",
             "mandatory": true
         },
         {
-            "name": "should_output_raw_results",
-            "label": "Output Raw Response?",
-            "type": "BOOLEAN"
+            "name": "error_handling",
+            "label": "API error handling",
+            "type": "SELECT",
+            "selectChoices": [
+                {
+                    "value": "fail",
+                    "label": "Fail"
+                },
+                {
+                    "value": "warn",
+                    "label": "Warn"
+                }
+            ],
+            "defaultValue": "warn",
+            "mandatory": true
         }
     ]
 }
