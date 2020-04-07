@@ -53,6 +53,18 @@
                     "label": "Auto-detect"
                 },
                 {
+                    "value": "ar",
+                    "label": "Arabic"
+                },
+                {
+                    "value": "zh",
+                    "label": "Chinese (Simplified)"
+                },
+                {
+                    "value": "zh-TW",
+                    "label": "Chinese (Traditional)"
+                },
+                {
                     "value": "en",
                     "label": "English"
                 },
@@ -65,8 +77,20 @@
                     "label": "German"
                 },
                 {
+                    "value": "hi",
+                    "label": "Hindi"
+                },
+                {
                     "value": "it",
                     "label": "Italian"
+                },
+                {
+                    "value": "ja",
+                    "label": "Japanese"
+                },
+                {
+                    "value": "ko",
+                    "label": "Korean"
                 },
                 {
                     "value": "pt",

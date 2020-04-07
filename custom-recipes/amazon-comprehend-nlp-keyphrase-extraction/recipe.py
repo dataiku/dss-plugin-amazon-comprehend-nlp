@@ -1,46 +1,59 @@
 # -*- coding: utf-8 -*-
 import logging
-import time
-import json
+
+from ratelimit import limits, RateLimitException
+from retry import retry
+
 import dataiku
-from dataiku.customrecipe import *
-from dku_aws_nlp import *
-from api_calling_utils import *
+from api_calling_utils import (
+    generate_unique, fail_or_warn_on_row, api_parallelizer
+)
+from dataiku.customrecipe import (
+    get_recipe_config, get_input_names_for_role, get_output_names_for_role
+)
+from dku_aws_nlp import (
+    get_client
+)
 
-#==============================================================================
+
+# ==============================================================================
 # SETUP
-#==============================================================================
+# ==============================================================================
 
-logging.basicConfig(level=logging.INFO, format='[comprehend plugin] %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='[Amazon Comprehend NLP plugin] %(levelname)s - %(message)s'
+)
 
-connection_info = get_recipe_config().get('connectionInfo', {})
+api_configuration_preset = get_recipe_config().get("api_configuration_preset")
+api_quota_rate_limit = api_configuration_preset.get("api_quota_rate_limit")
+api_quota_period = api_configuration_preset.get("api_quota_period")
+parallel_workers = api_configuration_preset.get("parallel_workers")
 text_column = get_recipe_config().get('text_column')
-language = get_recipe_config().get('language', 'en')
-should_output_raw_results = get_recipe_config().get('should_output_raw_results')
+text_language = get_recipe_config().get("language", '')
+error_handling = get_recipe_config().get('error_handling')
 
 input_dataset_name = get_input_names_for_role('input_dataset')[0]
 input_dataset = dataiku.Dataset(input_dataset_name)
-input_schema = input_dataset.read_schema()
-input_columns_names = [col['name'] for col in input_schema]
-keyphrases_column_name = generate_unique("keyphrases", input_columns_names)
 
 output_dataset_name = get_output_names_for_role('output_dataset')[0]
 output_dataset = dataiku.Dataset(output_dataset_name)
 
 if text_column is None or len(text_column) == 0:
-    raise ValueError("You must specify the input text column")
+    raise ValueError("You must specify the input text column.")
 if text_column not in input_columns_names:
-    raise ValueError("Column '{}' is not present in the input dataset".format(text_column))
+    raise ValueError(
+        "Column '{}' is not present in the input dataset.".format(text_column)
+    )
 
 
-
-#==============================================================================
+# ==============================================================================
 # RUN
-#==============================================================================
+# ==============================================================================
 
 input_df = input_dataset.get_dataframe()
 response_column = generate_unique("raw_response", input_df.columns)
-client = get_client(connection_info)
+client = get_client(api_configuration_preset)
 
 
 @retry((RateLimitException, OSError), delay=api_quota_period, tries=5)

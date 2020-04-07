@@ -15,7 +15,7 @@
         {
             "name": "aws_access_key",
             "label": "AWS access key ID",
-            "description": "If empty, attempts to ascertain credentials from the environment.", 
+            "description": "If empty, attempts to ascertain credentials from the environment.",
             "type": "STRING",
             "mandatory": false
         },
@@ -29,7 +29,7 @@
         {
             "name": "aws_region",
             "label": "AWS region",
-            "description": "If empty, attempts to ascertain region name from the environment.", 
+            "description": "If empty, attempts to ascertain region name from the environment.",
             "type": "STRING",
             "mandatory": false
         },
@@ -70,6 +70,16 @@
             "defaultValue": 4,
             "minI": 1,
             "maxI": 100
+        },
+        {
+            "name": "batch_size",
+            "label": "Batch size",
+            "description": "Number of rows to send to the API in batch",
+            "type": "INT",
+            "mandatory": true,
+            "defaultValue": 10,
+            "minI": 1,
+            "maxI": 25
         }
     ]
 }
