@@ -59,8 +59,24 @@ client = get_client(api_configuration_preset)
 @retry((RateLimitException, OSError), delay=api_quota_period, tries=5)
 @limits(calls=api_quota_rate_limit, period=api_quota_period)
 @fail_or_warn_on_row(error_handling=error_handling)
-def call_keyphrase_extraction(row, text_column, text_language=None):
-    # TODO
+def call_api_keyphrase_extraction(row, text_column, text_language="auto"):
+    if text_language == "auto":
+        if not isinstance(text, str) or text.strip() == '':
+            return('')
+        else:
+            document = language.types.Document(
+                content=text, language=text_language, type=DOCUMENT_TYPE)
+            if entity_sentiment:
+                response = client.analyze_entity_sentiment(
+                    document=document, encoding_type=ENCODING_TYPE)
+            else:
+                response = client.analyze_entities(
+                    document=document, encoding_
+    else:
+        raise NotImplementedError
+        text_list = [r[text_column] for r in row]
+type=ENCODING_TYPE)
+        return MessageToJson(response)
 
 
 output_df = api_parallelizer(

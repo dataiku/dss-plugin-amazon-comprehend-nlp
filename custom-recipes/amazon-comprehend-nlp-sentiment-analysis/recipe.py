@@ -7,11 +7,12 @@ from dataiku.customrecipe import *
 from dku_aws_nlp import *
 from api_calling_utils import *
 
-#==============================================================================
+# ==============================================================================
 # SETUP
-#==============================================================================
+# ==============================================================================
 
-logging.basicConfig(level=logging.INFO, format='[comprehend plugin] %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO,
+                    format='[comprehend plugin] %(levelname)s - %(message)s')
 
 connection_info = get_recipe_config().get('connectionInfo', {})
 text_column = get_recipe_config().get('text_column')
@@ -23,8 +24,10 @@ input_dataset_name = get_input_names_for_role('input_dataset')[0]
 input_dataset = dataiku.Dataset(input_dataset_name)
 input_schema = input_dataset.read_schema()
 input_columns_names = [col['name'] for col in input_schema]
-predicted_sentiment_column = generate_unique('predicted_sentiment', input_columns_names)
-predicted_probability_column = generate_unique('predicted_probability', input_columns_names)
+predicted_sentiment_column = generate_unique(
+    'predicted_sentiment', input_columns_names)
+predicted_probability_column = generate_unique(
+    'predicted_probability', input_columns_names)
 
 output_dataset_name = get_output_names_for_role('output_dataset')[0]
 output_dataset = dataiku.Dataset(output_dataset_name)
@@ -32,11 +35,12 @@ output_dataset = dataiku.Dataset(output_dataset_name)
 if text_column is None or len(text_column) == 0:
     raise ValueError("You must specify the input text column")
 if text_column not in input_columns_names:
-    raise ValueError("Column '{}' is not present in the input dataset".format(text_column))
+    raise ValueError(
+        "Column '{}' is not present in the input dataset".format(text_column))
 
-#==============================================================================
+# ==============================================================================
 # RUN
-#==============================================================================
+# ==============================================================================
 
 input_df = input_dataset.get_dataframe()
 response_column = generate_unique("raw_response", input_df.columns)
@@ -48,6 +52,7 @@ client = get_client(gcp_service_account_key)
 @fail_or_warn_on_row(error_handling=error_handling)
 def call_api_sentiment_analysis(row, text_column, text_language=None):
     # TODO
+
 
 output_df = api_parallelizer(
     input_df=input_df, api_call_function=call_api_named_entity_recognition,
