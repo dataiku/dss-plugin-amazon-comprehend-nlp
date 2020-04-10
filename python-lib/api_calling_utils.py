@@ -81,12 +81,14 @@ def safe_json_loads(
 
 
 def fail_or_warn_on_row(
+    api_call_function: Callable,
     api_exceptions: Union[Exception, Tuple[Exception]] = API_EXCEPTIONS,
-    error_handling: AnyStr = ErrorHandlingEnum.FAIL.value,
-    verbose: bool = False
+    error_handling: AnyStr = ErrorHandlingEnum.WARN.value,
+    verbose: bool = False,
+    **api_call_function_kwargs
 ) -> Callable:
     """
-    Decorate an API calling function to:
+    Wraps an API calling function to:
     - ensure it has a 'row' parameter which is a dict (BATCH *not* supported)
     - return the row with a 'raw_result' key containing the function result
     - handles errors from the function with two methods:
@@ -95,46 +97,38 @@ def fail_or_warn_on_row(
         and return the row with a new 'error' key
      """
     assert error_handling in [i.value for i in ErrorHandlingEnum]
-
-    def inner_decorator(func):
-        if "row" not in inspect.getfullargspec(func).args:
-            raise ValueError("Function must have 'row' as first parameter.")
-
-        @wraps(func)
-        def wrapped(row, *args, **kwargs):
-            if not isinstance(row, dict):
-                raise ValueError("The 'row' parameter must be a dict.")
-            response_key = generate_unique("raw_response", row.keys())
-            error_message_key = generate_unique("error_message", row.keys())
-            error_type_key = generate_unique("error_type", row.keys())
-            error_raw_key = generate_unique("error_raw", row.keys())
-            new_keys = [
-                response_key, error_message_key,
-                error_type_key, error_raw_key
-            ]
-            if error_handling == ErrorHandlingEnum.FAIL.value:
-                row[response_key] = func(row=row, *args, **kwargs)
-                return row
-            elif error_handling == ErrorHandlingEnum.WARN.value:
-                for k in new_keys:
-                    row[k] = ''
-                try:
-                    row[response_key] = func(row=row, *args, **kwargs)
-                    return row
-                except api_exceptions as e:
-                    error_str = str(e)
-                    logging.warning(error_str)
-                    module = str(inspect.getmodule(e).__name__)
-                    class_name = str(type(e).__qualname__)
-                    error_type = module + "." + class_name
-                    error_raw = str(e.args)
-                    row[error_message_key] = error_str
-                    row[error_type_key] = error_type
-                    if verbose:
-                        row[error_raw_key] = error_raw
-                    else:
-                        del row[error_raw_key]
-                    return row
+    if "row" not in inspect.getfullargspec(api_call_function).args:
+        raise ValueError("Function must have a 'row' parameter.")
+    response_key = generate_unique("raw_response", row.keys())
+    error_message_key = generate_unique("error_message", row.keys())
+    error_type_key = generate_unique("error_type", row.keys())
+    error_raw_key = generate_unique("error_raw", row.keys())
+    new_keys = [
+        response_key, error_message_key,
+        error_type_key, error_raw_key]
+    if error_handling == ErrorHandlingEnum.FAIL.value:
+        row[response_key] = api_call_function(**api_call_function_kwargss)
+        return row
+    elif error_handling == ErrorHandlingEnum.WARN.value:
+        for k in new_keys:
+            row[k] = ''
+        try:
+            row[response_key] = func(row=row, *args, **kwargs)
+            return row
+        except api_exceptions as e:
+            error_str = str(e)
+            logging.warning(error_str)
+            module = str(inspect.getmodule(e).__name__)
+            class_name = str(type(e).__qualname__)
+            error_type = module + "." + class_name
+            error_raw = str(e.args)
+            row[error_message_key] = error_str
+            row[error_type_key] = error_type
+            if verbose:
+                row[error_raw_key] = error_raw
+            else:
+                del row[error_raw_key]
+            return row
 
         return wrapped
 
@@ -153,6 +147,8 @@ def api_parallelizer(
     parallel_workers: int = 5,
     api_support_batch: bool = False,
     batch_size: int = 10,
+    error_handling: AnyStr = ErrorHandlingEnum.WARN.value,
+    api_exceptions: Union[Exception, Tuple[Exception]] = API_EXCEPTIONS,
     verbose: bool = False,
     **api_call_function_kwargs
 ) -> pd.DataFrame:
@@ -163,40 +159,44 @@ def api_parallelizer(
     - (default) sending multiple concurrent threads
     - if the API supports it, sending batches of row
     """
+    assert error_handling in [i.value for i in ErrorHandlingEnum]
     df_iterator = (i[1].to_dict() for i in input_df.iterrows())
     len_iterator = len(input_df.index)
     if api_support_batch:
         df_iterator = chunked(df_iterator, batch_size)
         len_iterator = math.ceil(len_iterator / batch_size)
-    response_col = generate_unique("raw_response", input_df.columns)
-    error_message_col = generate_unique("error_message", input_df.columns)
-    error_type_col = generate_unique("error_type", input_df.columns)
-    output_schema = {
-        **{response_col: str, error_message_col: str, error_type_col: str},
-        **dict(input_df.dtypes)
-    }
-    if verbose:
-        error_raw_col = generate_unique("error_raw", input_df.columns)
-        output_schema = {**output_schema,  **{error_raw_col: str}}
+    api_column_list = [
+        "api_response", "api_error_message", "api_error_type", "api_error_raw"]
+    api_column_unique_dict = {
+        k: generate_unique(k, input_df.columns) for k in api_column_list}
+    pool_kwargs = {
+        **api_call_function_kwargs, **api_column_unique_dict}
+    for k in ['api_call_function', 'error_handling', 'api_exceptions']:
+        pool_kwargs[k] = locals()[k]
     results = []
     with ThreadPoolExecutor(max_workers=parallel_workers) as pool:
-        futures = [
-            pool.submit(
-                fn=api_call_function, row=row, **api_call_function_kwargs)
-            for row in df_iterator
-        ]
+        if api_support_batch:
+            futures = [
+                pool.submit(row_batch=row_batch, **pool_kwargs)
+                for row_batch in df_iterator]
+        else:
+            futures = [
+                pool.submit(row=row, **pool_kwargs)
+                for row in df_iterator]
         for f in tqdm_auto(as_completed(futures), total=len_iterator):
             results.append(f.result())
     if api_support_batch:
         results = flatten(results)
+    output_schema = {
+        **{v: str for v in api_column_unique_dict.values()},
+        **dict(input_df.dtypes)}
+    if not verbose:
+        del output_schema[api_column_unique_dict["api_error_raw"]]
     record_list = [
         {col: result.get(col) for col in output_schema.keys()}
         for result in results
     ]
-    column_list = list(input_df.columns)
-    column_list += [response_col, error_message_col, error_type_col]
-    if verbose:
-        column_list += [error_raw_col]
+    column_list = list(input_df.columns) + api_column_unique_dict.values()
     output_df = pd.DataFrame.from_records(record_list) \
         .astype(output_schema) \
         .reindex(columns=column_list)
