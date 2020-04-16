@@ -18,7 +18,7 @@ from param_enums import ErrorHandlingEnum
 # CONSTANT DEFINITION
 # ==============================================================================
 
-
+# TODO turn this into Enum
 API_COLUMN_LIST = ["response", "error_message", "error_type", "error_raw"]
 
 API_EXCEPTIONS = Exception
