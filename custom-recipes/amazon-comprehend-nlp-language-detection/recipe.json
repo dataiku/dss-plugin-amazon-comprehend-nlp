@@ -64,11 +64,11 @@
                     "label": "Fail"
                 },
                 {
-                    "value": "warn",
-                    "label": "Warn"
+                    "value": "log",
+                    "label": "Log"
                 }
             ],
-            "defaultValue": "warn",
+            "defaultValue": "log",
             "mandatory": true
         }
     ]

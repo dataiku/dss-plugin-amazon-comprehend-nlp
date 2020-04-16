@@ -58,7 +58,6 @@ client = get_client(api_configuration_preset)
 
 @retry((RateLimitException, OSError), delay=api_quota_period, tries=5)
 @limits(calls=api_quota_rate_limit, period=api_quota_period)
-@fail_or_warn_on_row(error_handling=error_handling)
 def call_api_keyphrase_extraction(row, text_column, text_language="auto"):
     if text_language == "auto":
         if not isinstance(text, str) or text.strip() == '':
