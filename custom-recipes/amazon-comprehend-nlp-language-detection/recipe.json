@@ -28,7 +28,7 @@
     ],
     "params": [
         {
-            "name": "separator1",
+            "name": "separator_input",
             "label": "Input Parameters",
             "type": "SEPARATOR"
         },
@@ -43,7 +43,7 @@
             ]
         },
         {
-            "name": "separator3",
+            "name": "separator_configuration",
             "label": "Configuration",
             "type": "SEPARATOR"
         },
@@ -60,15 +60,15 @@
             "type": "SELECT",
             "selectChoices": [
                 {
-                    "value": "fail",
+                    "value": "FAIL",
                     "label": "Fail"
                 },
                 {
-                    "value": "log",
+                    "value": "LOG",
                     "label": "Log"
                 }
             ],
-            "defaultValue": "log",
+            "defaultValue": "LOG",
             "mandatory": true
         }
     ]

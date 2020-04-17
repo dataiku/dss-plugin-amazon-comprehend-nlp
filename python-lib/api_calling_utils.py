@@ -4,8 +4,8 @@ import inspect
 import math
 import json
 
-from collections import OrderedDict
-from typing import Callable, AnyStr, List, Tuple, Dict, Union
+from collections import namedtuple
+from typing import Callable, AnyStr, List, Tuple, NamedTuple, Dict, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pandas as pd
@@ -18,8 +18,12 @@ from param_enums import ErrorHandlingEnum
 # CONSTANT DEFINITION
 # ==============================================================================
 
-# TODO turn this into Enum
-API_COLUMN_LIST = ["response", "error_message", "error_type", "error_raw"]
+API_COLUMN_NAMES = ["response", "error_message", "error_type", "error_raw"]
+ApiColumnNameTuple = namedtuple("ApiColumnNameTuple", API_COLUMN_NAMES)
+COLUMN_PREFIX = "api"
+
+PARALLEL_WORKERS = 4
+BATCH_SIZE = 10
 
 API_EXCEPTIONS = Exception
 try:
@@ -47,7 +51,7 @@ except ImportError:
 def generate_unique(
     name: AnyStr,
     existing_names: List,
-    prefix: AnyStr = None
+    prefix: AnyStr = COLUMN_PREFIX
 ) -> AnyStr:
     """
     Generate a unique name among existing ones by suffixing a number.
@@ -64,16 +68,31 @@ def generate_unique(
     raise Exception("Failed to generated a unique name")
 
 
+def initialize_api_column_names(
+    existing_names: List[AnyStr],
+    column_prefix: AnyStr = COLUMN_PREFIX
+) -> NamedTuple:
+    """
+    Helper function to the "api_parallelizer" main function.
+    Initializes a named tuple of column names from ApiColumnNameTuple,
+    adding a prefix and a number suffix to make them unique.
+    """
+    api_column_names = ApiColumnNameTuple(
+        *[generate_unique(k, existing_names, column_prefix)
+          for k in ApiColumnNameTuple._fields])
+    return api_column_names
+
+
 def safe_json_loads(
     str_to_check: AnyStr,
-    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.log
+    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG
 ) -> Dict:
     """
     Wrap json.loads with an additional parameter to handle errors:
-    - 'RAISE' to use json.loads, which fails on invalid data
+    - 'FAIL' to use json.loads, which fails on invalid data
     - 'LOG' to try json.loads and return an empty dict if data is invalid
     """
-    if error_handling == ErrorHandlingEnum.fail:
+    if error_handling == ErrorHandlingEnum.FAIL:
         output = json.loads(str_to_check)
     else:
         try:
@@ -86,10 +105,10 @@ def safe_json_loads(
 
 def fail_or_warn_row(
     api_call_function: Callable,
-    api_column_dict: Dict,
+    api_column_names: NamedTuple,
     row: Dict,
     api_exceptions: Union[Exception, Tuple[Exception]] = API_EXCEPTIONS,
-    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.log,
+    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
     verbose: bool = False,
     **api_call_function_kwargs
 ) -> Dict:
@@ -102,29 +121,29 @@ def fail_or_warn_row(
         and return the row with new error keys
         * fail if there is an error and raise it
     """
-    if error_handling == ErrorHandlingEnum.fail:
-        row[api_column_dict["response"]] = api_call_function(
+    if error_handling == ErrorHandlingEnum.FAIL:
+        row[api_column_names.response] = api_call_function(
             row=row, **api_call_function_kwargs)
         return row
     else:
-        for k in api_column_dict.values():
+        for k in api_column_names:
             row[k] = ''
         try:
-            row[api_column_dict["response"]] = api_call_function(
+            row[api_column_names.response] = api_call_function(
                 row=row, **api_call_function_kwargs)
         except api_exceptions as e:
             logging.warning(str(e))
             module = str(inspect.getmodule(e).__name__)
             error_name = str(type(e).__qualname__)
-            row[api_column_dict["error_message"]] = str(e)
-            row[api_column_dict["error_type"]] = ".".join([module, error_name])
-            row[api_column_dict["error_raw"]] = str(e.args)
+            row[api_column_names.error_message] = str(e)
+            row[api_column_names.error_type] = ".".join([module, error_name])
+            row[api_column_names.error_raw] = str(e.args)
         return row
 
 
 def fail_or_warn_batch(
     api_call_function: Callable,
-    api_column_dict: Dict,
+    api_column_names: NamedTuple,
     batch: List[Dict],
     batch_result_key: AnyStr,
     batch_error_key: AnyStr,
@@ -132,7 +151,7 @@ def fail_or_warn_batch(
     batch_error_message_key: AnyStr = None,
     batch_error_type_key: AnyStr = None,
     api_exceptions: Union[Exception, Tuple[Exception]] = API_EXCEPTIONS,
-    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.log,
+    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
     verbose: bool = False,
     **api_call_function_kwargs
 ) -> List[Dict]:
@@ -146,15 +165,15 @@ def fail_or_warn_batch(
         and return the batch with new error keys in each dict
         * fail if there is an error and raise it
     """
-    if error_handling == ErrorHandlingEnum.fail:
+    if error_handling == ErrorHandlingEnum.FAIL:
         response = api_call_function(batch=batch, **api_call_function_kwargs)
         results = response.get(batch_result_key, [])
         errors = response.get(batch_error_key, [])
         for i in range(len(batch)):
-            batch[i][api_column_dict["response"]] = ''
+            batch[i][api_column_names.response] = ''
             result = [r for r in results if r.get(batch_index_key) == i]
             if len(result) > 0:
-                batch[i][api_column_dict["response"]] = result[0]
+                batch[i][api_column_names.response] = result[0]
             if len(errors) > 0:
                 raise Exception("API returned errors: " + str(errors))
         return batch
@@ -165,52 +184,37 @@ def fail_or_warn_batch(
             results = response.get(batch_result_key, [])
             errors = response.get(batch_error_key, [])
             for i in range(len(batch)):
-                for k in api_column_dict.values():
+                for k in api_column_names:
                     batch[i][k] = ''
                 result = [r for r in results if r.get(batch_index_key) == i]
                 error = [r for r in errors if r.get(batch_index_key) == i]
                 if len(result) > 0:
-                    batch[i][api_column_dict["response"]] = result[0]
+                    batch[i][api_column_names.response] = result[0]
                 if len(error) > 0:
                     logging.warning(str(error))
-                    batch[i][api_column_dict["error_message"]] = error.get(
+                    batch[i][api_column_names.error_message] = error.get(
                         batch_error_message_key, '')
-                    batch[i][api_column_dict["error_type"]] = error.get(
+                    batch[i][api_column_names.error_type] = error.get(
                         batch_error_type_key, '')
-                    batch[i][api_column_dict["error_raw"]] = str(error)
+                    batch[i][api_column_names.error_raw] = str(error)
         except api_exceptions as e:
             logging.warning(str(e))
             module = str(inspect.getmodule(e).__name__)
             error_name = str(type(e).__qualname__)
             for i in range(len(batch)):
-                batch[i][api_column_dict["response"]] = ''
-                batch[i][api_column_dict["error_message"]] = str(e)
-                batch[i][api_column_dict["error_type"]] = ".".join(
+                batch[i][api_column_names.response] = ''
+                batch[i][api_column_names.error_message] = str(e)
+                batch[i][api_column_names.error_type] = ".".join(
                     [module, error_name])
-                batch[i][api_column_dict["error_raw"]] = str(e.args)
+                batch[i][api_column_names.error_raw] = str(e.args)
         return batch
-
-
-def initialize_api_column_names(
-    input_df: pd.DataFrame,
-    column_prefix: AnyStr = "api"
-) -> OrderedDict:
-    """
-    Helper function to the "api_parallelizer" main function.
-    Initializes a dictionary of column names from API_COLUMN_LIST,
-    adding a prefix and a number suffix to make them unique.
-    """
-    api_column_dict = OrderedDict(
-        (k, generate_unique(k, input_df.columns, column_prefix))
-        for k in API_COLUMN_LIST)
-    return api_column_dict
 
 
 def convert_api_results_to_df(
     input_df: pd.DataFrame,
     api_results: List[Dict],
-    api_column_dict: Dict,
-    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.log,
+    api_column_names: NamedTuple,
+    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
     verbose: bool = False
 ) -> pd.DataFrame:
     """
@@ -218,15 +222,14 @@ def convert_api_results_to_df(
     Combine API results (list of dict) with input dataframe,
     and convert it to a dataframe.
     """
-    if error_handling == ErrorHandlingEnum.fail:
+    if error_handling == ErrorHandlingEnum.FAIL:
         columns_to_exclude = [
-            v for k, v in api_column_dict.items() if "error" in k]
+            v for k, v in api_column_names._asdict().items() if "error" in k]
     else:
         if not verbose:
-            columns_to_exclude = [api_column_dict["error_raw"]]
+            columns_to_exclude = [api_column_names.error_raw]
     output_schema = {
-        **{v: str for v in api_column_dict.values()},
-        **dict(input_df.dtypes)}
+        **{v: str for v in api_column_names}, **dict(input_df.dtypes)}
     output_schema = {
         k: v for k, v in output_schema.items()
         if k not in columns_to_exclude}
@@ -234,24 +237,23 @@ def convert_api_results_to_df(
         {col: result.get(col) for col in output_schema.keys()}
         for result in api_results]
     api_column_list = [
-        c for c in list(api_column_dict.values())
-        if c not in columns_to_exclude]
+        c for c in api_column_names if c not in columns_to_exclude]
     output_column_list = list(input_df.columns) + api_column_list
     output_df = pd.DataFrame.from_records(record_list) \
         .astype(output_schema) \
         .reindex(columns=output_column_list)
     assert len(output_df.index) == len(input_df.index)
-    return(output_df)
+    return output_df
 
 
 def api_parallelizer(
     input_df: pd.DataFrame,
     api_call_function: Callable,
-    parallel_workers: int = 5,
+    parallel_workers: int = PARALLEL_WORKERS,
     api_support_batch: bool = False,
-    batch_size: int = 10,
-    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.log,
-    column_prefix: AnyStr = "api",
+    batch_size: int = BATCH_SIZE,
+    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
+    column_prefix: AnyStr = COLUMN_PREFIX,
     api_exceptions: Union[Exception, Tuple[Exception]] = API_EXCEPTIONS,
     verbose: bool = False,
     **api_call_function_kwargs
@@ -268,11 +270,12 @@ def api_parallelizer(
     if api_support_batch:
         df_iterator = chunked(df_iterator, batch_size)
         len_iterator = math.ceil(len_iterator / batch_size)
-    api_column_dict = initialize_api_column_names(input_df, column_prefix)
+    api_column_names = initialize_api_column_names(
+        input_df.columns, column_prefix)
     pool_kwargs = api_call_function_kwargs.copy()
     more_kwargs = [
         'api_call_function', 'error_handling',
-        'api_exceptions', 'api_column_dict']
+        'api_exceptions', 'api_column_names']
     for k in more_kwargs:
         pool_kwargs[k] = locals()[k]
     for k in ["fn", "row", "batch"]:  # Reserved pool keyword arguments
@@ -292,5 +295,5 @@ def api_parallelizer(
     if api_support_batch:
         api_results = flatten(api_results)
     output_df = convert_api_results_to_df(
-        input_df, api_results, api_column_dict, error_handling, verbose)
+        input_df, api_results, api_column_names, error_handling, verbose)
     return output_df

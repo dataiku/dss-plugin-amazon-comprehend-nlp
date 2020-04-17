@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 import logging
-import json
 
 from ratelimit import limits, RateLimitException
 from retry import retry
 
 import dataiku
 from api_calling_utils import initialize_api_column_names, api_parallelizer
-from param_enums import ErrorHandlingEnum, OutputFormatEnum
+from param_enums import ErrorHandlingEnum
 from dataiku.customrecipe import (
     get_recipe_config, get_input_names_for_role, get_output_names_for_role
 )
