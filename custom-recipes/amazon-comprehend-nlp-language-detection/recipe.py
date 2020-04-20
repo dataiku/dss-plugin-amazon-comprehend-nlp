@@ -10,7 +10,9 @@ from param_enums import ErrorHandlingEnum
 from dataiku.customrecipe import (
     get_recipe_config, get_input_names_for_role, get_output_names_for_role
 )
-from dku_aws_nlp import get_client
+from dku_aws_nlp import (
+    DEFAULT_AXIS_NUMBER, get_client, format_language_detection
+)
 
 
 # ==============================================================================
@@ -52,7 +54,7 @@ if text_column not in input_columns_names:
 input_df = input_dataset.get_dataframe()
 client = get_client(api_configuration_preset)
 column_prefix = "lang_detect_api"
-api_column_dict = initialize_api_column_names(input_df, column_prefix)
+api_column_names = initialize_api_column_names(input_df, column_prefix)
 
 
 @retry((RateLimitException, OSError), delay=api_quota_period, tries=5)
@@ -67,15 +69,12 @@ output_df = api_parallelizer(
     input_df=input_df, api_call_function=call_api_language_detection,
     text_column=text_column, parallel_workers=parallel_workers,
     api_support_batch=True, batch_size=batch_size,
-    error_handling=error_handling, column_prefix=column_prefix,
-    batch_result_key="ResultList", batch_error_key="ErrorList",
-    batch_index_key="Index", batch_error_message_key="ErrorMessage",
-    batch_error_type_key="ErrorCode",
+    error_handling=error_handling, column_prefix=column_prefix
 )
 
-# output_df = output_df.apply(
-#    func=format_named_entity_recognition, axis=1,
-#    response_column=response_column, output_format=output_format,
-#    error_handling=error_handling)
+output_df = output_df.apply(
+   func=format_language_detection, axis=DEFAULT_AXIS_NUMBER,
+   response_column=api_column_names.response, error_handling=error_handling,
+   column_prefix=column_prefix)
 
 output_dataset.write_with_schema(output_df)

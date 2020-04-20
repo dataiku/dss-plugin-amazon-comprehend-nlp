@@ -25,6 +25,12 @@ COLUMN_PREFIX = "api"
 PARALLEL_WORKERS = 4
 BATCH_SIZE = 10
 
+BATCH_RESULT_KEY = "ResultList"
+BATCH_ERROR_KEY = "ErrorList"
+BATCH_INDEX_KEY = "Index"
+BATCH_ERROR_MESSAGE_KEY = "ErrorMessage"
+BATCH_ERROR_TYPE_KEY = "ErrorCode"
+
 API_EXCEPTIONS = Exception
 try:
     from requests.exceptions import RequestException
@@ -33,8 +39,8 @@ except ImportError:
     pass
 try:
     from boto3.exceptions import Boto3Error
-    from botocore.exceptions import BotoCoreError
-    API_EXCEPTIONS = (Boto3Error, BotoCoreError)
+    from botocore.exceptions import BotoCoreError, ClientError
+    API_EXCEPTIONS = (Boto3Error, BotoCoreError, ClientError)
 except ImportError:
     pass
 try:
@@ -145,11 +151,11 @@ def fail_or_warn_batch(
     api_call_function: Callable,
     api_column_names: NamedTuple,
     batch: List[Dict],
-    batch_result_key: AnyStr,
-    batch_error_key: AnyStr,
-    batch_index_key: AnyStr,
-    batch_error_message_key: AnyStr = None,
-    batch_error_type_key: AnyStr = None,
+    batch_result_key: AnyStr = BATCH_RESULT_KEY,
+    batch_error_key: AnyStr = BATCH_ERROR_KEY,
+    batch_index_key: AnyStr = BATCH_INDEX_KEY,
+    batch_error_message_key: AnyStr = BATCH_ERROR_MESSAGE_KEY,
+    batch_error_type_key: AnyStr = BATCH_ERROR_TYPE_KEY,
     api_exceptions: Union[Exception, Tuple[Exception]] = API_EXCEPTIONS,
     error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
     verbose: bool = False,
@@ -173,7 +179,7 @@ def fail_or_warn_batch(
             batch[i][api_column_names.response] = ''
             result = [r for r in results if r.get(batch_index_key) == i]
             if len(result) > 0:
-                batch[i][api_column_names.response] = result[0]
+                batch[i][api_column_names.response] = json.dumps(result[0])
             if len(errors) > 0:
                 raise Exception("API returned errors: " + str(errors))
         return batch
@@ -189,7 +195,7 @@ def fail_or_warn_batch(
                 result = [r for r in results if r.get(batch_index_key) == i]
                 error = [r for r in errors if r.get(batch_index_key) == i]
                 if len(result) > 0:
-                    batch[i][api_column_names.response] = result[0]
+                    batch[i][api_column_names.response] = json.dumps(result[0])
                 if len(error) > 0:
                     logging.warning(str(error))
                     batch[i][api_column_names.error_message] = error.get(

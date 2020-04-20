@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-import json
 import logging
-from typing import AnyStr, Dict, Union
+from typing import AnyStr, Dict
 
 import boto3
 
@@ -12,6 +11,8 @@ from api_calling_utils import (
 # ==============================================================================
 # CONSTANT DEFINITION
 # ==============================================================================
+
+DEFAULT_AXIS_NUMBER = 1
 
 ALL_ENTITY_TYPES = [
     'COMMERCIAL_ITEM', 'DATE', 'EVENT', 'LOCATION', 'ORGANIZATION',
@@ -33,6 +34,37 @@ def get_client(api_configuration_preset):
         region_name=api_configuration_preset.get('aws_region'))
     logging.info("Credentials loaded")
     return client
+
+
+def format_key_phrase_extraction(
+    row: Dict,
+    response_column: AnyStr,
+    column_prefix: AnyStr = "lang_detect_api",
+    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG
+) -> Dict:
+    # TODO implement it 
+    # raw_response = row[response_column]
+    # response = safe_json_loads(raw_response, error_handling)
+    # language_column = generate_unique(
+    #    "language_code", row.keys(), column_prefix)
+    # languages = response.get("Languages", [])
+    # row[language_column] = languages[0].get("LanguageCode", "")
+    return row
+
+
+def format_language_detection(
+    row: Dict,
+    response_column: AnyStr,
+    column_prefix: AnyStr = "lang_detect_api",
+    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG
+) -> Dict:
+    raw_response = row[response_column]
+    response = safe_json_loads(raw_response, error_handling)
+    language_column = generate_unique(
+        "language_code", row.keys(), column_prefix)
+    languages = response.get("Languages", [])
+    row[language_column] = languages[0].get("LanguageCode", "")
+    return row
 
 
 def format_sentiment_results(raw_results):
