@@ -5,24 +5,19 @@ from ratelimit import limits, RateLimitException
 from retry import retry
 
 import dataiku
-from api_calling_utils import initialize_api_column_names, api_parallelizer
-from param_enums import ErrorHandlingEnum
+
+from io_utils import (
+    ErrorHandlingEnum, build_unique_column_names, validate_column_input)
+from api_calling_utils import api_parallelizer
 from dataiku.customrecipe import (
-    get_recipe_config, get_input_names_for_role, get_output_names_for_role
-)
+    get_recipe_config, get_input_names_for_role, get_output_names_for_role)
 from dku_aws_nlp import (
-    DEFAULT_AXIS_NUMBER, get_client, format_language_detection
-)
+    DEFAULT_AXIS_NUMBER, get_client, format_language_detection)
 
 
 # ==============================================================================
 # SETUP
 # ==============================================================================
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='[Amazon Comprehend NLP plugin] %(levelname)s - %(message)s'
-)
 
 api_configuration_preset = get_recipe_config().get("api_configuration_preset")
 api_quota_rate_limit = api_configuration_preset.get("api_quota_rate_limit")
@@ -40,11 +35,7 @@ input_columns_names = [col['name'] for col in input_schema]
 output_dataset_name = get_output_names_for_role('output_dataset')[0]
 output_dataset = dataiku.Dataset(output_dataset_name)
 
-if text_column is None or len(text_column) == 0:
-    raise ValueError("You must specify the input text column.")
-if text_column not in input_columns_names:
-    raise ValueError(
-        "Column '{}' is not present in the input dataset.".format(text_column))
+validate_column_input(text_column, input_columns_names)
 
 
 # ==============================================================================
@@ -54,7 +45,7 @@ if text_column not in input_columns_names:
 input_df = input_dataset.get_dataframe()
 client = get_client(api_configuration_preset)
 column_prefix = "lang_detect_api"
-api_column_names = initialize_api_column_names(input_df, column_prefix)
+api_column_names = build_unique_column_names(input_df, column_prefix)
 
 
 @retry((RateLimitException, OSError), delay=api_quota_period, tries=5)
@@ -72,9 +63,11 @@ output_df = api_parallelizer(
     error_handling=error_handling, column_prefix=column_prefix
 )
 
+logging.info("Formatting API results...")
 output_df = output_df.apply(
    func=format_language_detection, axis=DEFAULT_AXIS_NUMBER,
    response_column=api_column_names.response, error_handling=error_handling,
    column_prefix=column_prefix)
+logging.info("Formatting API results: Done.")
 
 output_dataset.write_with_schema(output_df)

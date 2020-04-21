@@ -1,6 +1,6 @@
 {
     "meta": {
-        "label": "Medical Detection",
+        "label": "Medical Information Detection",
         "description": "Detect medical entities (condition, medication, etc.) or Protected Health Information in clinical text",
         "icon": "icon-amazon-comprehend icon-cloud"
     },
