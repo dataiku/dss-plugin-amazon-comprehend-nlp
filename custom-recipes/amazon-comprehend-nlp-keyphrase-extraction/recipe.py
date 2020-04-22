@@ -1,29 +1,26 @@
 # -*- coding: utf-8 -*-
 import logging
 import json
+from typing import List, Dict, AnyStr, Union
 
 from ratelimit import limits, RateLimitException
 from retry import retry
 
 import dataiku
 
-from io_utils import (
+from plugin_io_utils import (
     ErrorHandlingEnum, OutputFormatEnum,
     build_unique_column_names, validate_column_input)
-from api_calling_utils import api_parallelizer
+from api_parallelizer import api_parallelizer
 from dataiku.customrecipe import (
     get_recipe_config, get_input_names_for_role, get_output_names_for_role)
-from dku_aws_nlp import (
-    DEFAULT_AXIS_NUMBER, get_client, format_key_phrase_extraction)
+from cloud_api import (
+    APPLY_AXIS, get_client, format_key_phrase_extraction)
+
 
 # ==============================================================================
 # SETUP
 # ==============================================================================
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='[Amazon Comprehend NLP plugin] %(levelname)s - %(message)s'
-)
 
 api_configuration_preset = get_recipe_config().get("api_configuration_preset")
 api_quota_rate_limit = api_configuration_preset.get("api_quota_rate_limit")
@@ -36,7 +33,6 @@ language_column = get_recipe_config().get("language_column")
 output_format = OutputFormatEnum[get_recipe_config().get('output_format')]
 num_key_phrases = int(get_recipe_config().get('num_key_phrases'))
 error_handling = ErrorHandlingEnum[get_recipe_config().get('error_handling')]
-
 
 input_dataset_name = get_input_names_for_role('input_dataset')[0]
 input_dataset = dataiku.Dataset(input_dataset_name)
@@ -53,30 +49,32 @@ if text_language == "language_column":
     api_support_batch = False
     validate_column_input(language_column, input_columns_names)
 
-
-# ==============================================================================
-# RUN
-# ==============================================================================
-
 input_df = input_dataset.get_dataframe()
 client = get_client(api_configuration_preset)
 column_prefix = "keyphrase_api"
 api_column_names = build_unique_column_names(input_df, column_prefix)
 
 
+# ==============================================================================
+# RUN
+# ==============================================================================
+
+
 @retry((RateLimitException, OSError), delay=api_quota_period, tries=5)
 @limits(calls=api_quota_rate_limit, period=api_quota_period)
 def call_api_key_phrase_extraction(
-    text_column, text_language, row=None, batch=None, language_column=None
-):
+    text_column: AnyStr, text_language: AnyStr, language_column: AnyStr = None,
+    row: Dict = None, batch: List[Dict] = None,
+) -> List[Union[Dict, AnyStr]]:
     if text_language == "language_column":
+        # Cannot use batch as language may be different for each row
         text = row[text_column]
         language_code = row[language_column]
         empty_conditions = [
             not(isinstance(text, str)), not(isinstance(language_code, str)),
             str(text).strip() == '', str(language_code).strip() == '']
         if any(empty_conditions):
-            return('')
+            return ''
         response = client.detect_key_phrases(
             Text=text, LanguageCode=language_code)
         return json.dumps(response)
@@ -92,12 +90,11 @@ output_df = api_parallelizer(
     text_column=text_column, text_language=text_language,
     language_column=language_column, parallel_workers=parallel_workers,
     api_support_batch=api_support_batch, batch_size=batch_size,
-    error_handling=error_handling, column_prefix=column_prefix
-)
+    error_handling=error_handling, column_prefix=column_prefix)
 
 logging.info("Formatting API results...")
 output_df = output_df.apply(
-   func=format_key_phrase_extraction, axis=DEFAULT_AXIS_NUMBER,
+   func=format_key_phrase_extraction, axis=APPLY_AXIS,
    response_column=api_column_names.response, output_format=output_format,
    num_key_phrases=num_key_phrases, column_prefix=column_prefix,
    error_handling=error_handling)

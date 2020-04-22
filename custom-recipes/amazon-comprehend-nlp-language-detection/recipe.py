@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 import logging
+from typing import List, Dict, AnyStr
 
-from ratelimit import limits, RateLimitException
 from retry import retry
+from ratelimit import limits, RateLimitException
 
 import dataiku
 
-from io_utils import (
+from plugin_io_utils import (
     ErrorHandlingEnum, build_unique_column_names, validate_column_input)
-from api_calling_utils import api_parallelizer
+from api_parallelizer import api_parallelizer
 from dataiku.customrecipe import (
     get_recipe_config, get_input_names_for_role, get_output_names_for_role)
-from dku_aws_nlp import (
-    DEFAULT_AXIS_NUMBER, get_client, format_language_detection)
+from cloud_api import (
+    API_SUPPORT_BATCH, APPLY_AXIS,
+    get_client, format_language_detection)
 
 
 # ==============================================================================
@@ -36,21 +38,22 @@ output_dataset_name = get_output_names_for_role('output_dataset')[0]
 output_dataset = dataiku.Dataset(output_dataset_name)
 
 validate_column_input(text_column, input_columns_names)
-
-
-# ==============================================================================
-# RUN
-# ==============================================================================
-
 input_df = input_dataset.get_dataframe()
 client = get_client(api_configuration_preset)
 column_prefix = "lang_detect_api"
 api_column_names = build_unique_column_names(input_df, column_prefix)
 
 
+# ==============================================================================
+# RUN
+# ==============================================================================
+
+
 @retry((RateLimitException, OSError), delay=api_quota_period, tries=5)
 @limits(calls=api_quota_rate_limit, period=api_quota_period)
-def call_api_language_detection(batch, text_column):
+def call_api_language_detection(
+    batch: List[Dict], text_column: AnyStr
+) -> List[Dict]:
     text_list = [str(r.get(text_column, '')).strip() for r in batch]
     responses = client.batch_detect_dominant_language(TextList=text_list)
     return responses
@@ -59,13 +62,12 @@ def call_api_language_detection(batch, text_column):
 output_df = api_parallelizer(
     input_df=input_df, api_call_function=call_api_language_detection,
     text_column=text_column, parallel_workers=parallel_workers,
-    api_support_batch=True, batch_size=batch_size,
-    error_handling=error_handling, column_prefix=column_prefix
-)
+    api_support_batch=API_SUPPORT_BATCH, batch_size=batch_size,
+    error_handling=error_handling, column_prefix=column_prefix)
 
 logging.info("Formatting API results...")
 output_df = output_df.apply(
-   func=format_language_detection, axis=DEFAULT_AXIS_NUMBER,
+   func=format_language_detection, axis=APPLY_AXIS,
    response_column=api_column_names.response, error_handling=error_handling,
    column_prefix=column_prefix)
 logging.info("Formatting API results: Done.")

@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import logging
 from typing import AnyStr, Dict
+from enum import Enum
 
 import boto3
 from boto3.exceptions import Boto3Error
 from botocore.exceptions import BotoCoreError, ClientError
 
-from io_utils import (
+from plugin_io_utils import (
     generate_unique, safe_json_loads, ErrorHandlingEnum, OutputFormatEnum)
 
 
@@ -16,7 +17,7 @@ from io_utils import (
 
 API_EXCEPTIONS = (Boto3Error, BotoCoreError, ClientError)
 
-API_SUPPORT_BATCH = False
+API_SUPPORT_BATCH = True
 BATCH_RESULT_KEY = "ResultList"
 BATCH_ERROR_KEY = "ErrorList"
 BATCH_INDEX_KEY = "Index"
@@ -25,10 +26,18 @@ BATCH_ERROR_TYPE_KEY = "ErrorCode"
 
 APPLY_AXIS = 1  # columns
 
-ALL_ENTITY_TYPES = [
-    'COMMERCIAL_ITEM', 'DATE', 'EVENT', 'LOCATION', 'ORGANIZATION',
-    'OTHER', 'PERSON', 'QUANTITY', 'TITLE'
-]
+
+class EntityTypesEnum(Enum):
+    COMMERCIAL_ITEM = "commercial_item"
+    DATE = "date"
+    EVENT = "event"
+    LOCATION = "location"
+    ORGANIZATION = "organization"
+    OTHER = "other"
+    PERSON = "person"
+    QUANTITY = "quantity"
+    TITLE = "title"
+
 
 # ==============================================================================
 # FUNCTION DEFINITION
@@ -59,7 +68,7 @@ def format_language_detection(
         "language_code", row.keys(), column_prefix)
     row[language_column] = ''
     languages = response.get("Languages", [])
-    if len(languages) > 0:
+    if len(languages) != 0:
         row[language_column] = languages[0].get("LanguageCode", "")
     return row
 
@@ -77,7 +86,7 @@ def format_key_phrase_extraction(
     if output_format == OutputFormatEnum.SINGLE_COLUMN:
         key_phrase_column = generate_unique(
             "keyphrase_list", row.keys(), column_prefix)
-        row[key_phrase_column] = response.get("KeyPhrases", [])
+        row[key_phrase_column] = response.get("KeyPhrases", "")
     else:
         key_phrases = sorted(
             response.get("KeyPhrases", []), key=lambda x: x.get("Score"),
@@ -88,7 +97,7 @@ def format_key_phrase_extraction(
             score_column = generate_unique(
                 "keyphrase_" + str(n) + "_score", row.keys(), column_prefix)
             if len(key_phrases) > n:
-                row[keyphrase_column] = key_phrases[n].get("Text", '')
+                row[keyphrase_column] = key_phrases[n].get("Text", "")
                 row[score_column] = key_phrases[n].get("Score")
             else:
                 row[keyphrase_column] = ''
@@ -96,57 +105,28 @@ def format_key_phrase_extraction(
     return row
 
 
-def format_sentiment_results(raw_results):
-    sentiment = raw_results.get('Sentiment').lower()
-    output_row = dict()
-    output_row["raw_results"] = raw_results
-    output_row["predicted_sentiment"] = sentiment
-    score = raw_results.get('SentimentScore', {}).get(sentiment.capitalize())
-    output_row["predicted_probability"] = round(score, 2)
-    return output_row
-
-
-def format_language_results(raw_results):
-    output_row = dict()
-    output_row["raw_results"] = raw_results
-    if len(raw_results.get('Languages')):
-        language = raw_results.get('Languages')[0]
-        output_row["detected_language"] = language.get('LanguageCode')
-        output_row["probability"] = round(language.get('Score'), 2)
+def format_named_entity_recognition(
+    row: Dict,
+    response_column: AnyStr,
+    output_format: OutputFormatEnum = OutputFormatEnum.MULTIPLE_COLUMNS,
+    column_prefix: AnyStr = "ner_api",
+    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG
+) -> Dict:
+    raw_response = row[response_column]
+    response = safe_json_loads(raw_response, error_handling)
+    if output_format == OutputFormatEnum.SINGLE_COLUMN:
+        key_phrase_column = generate_unique(
+            "entities", row.keys(), column_prefix)
+        row[key_phrase_column] = response.get("Entities", "")
     else:
-        output_row["detected_language"] = ''
-        output_row["probability"] = ''
-    return output_row
-
-
-def format_keyphrases_results(raw_results):
-    output_row = dict()
-    output_row["raw_results"] = raw_results
-    output_row["keyphrases"] = _distinct(
-        [kp["Text"] for kp in raw_results.get("KeyPhrases", [])])
-    return output_row
-
-
-def format_entities_results(raw_results):
-    output_row = dict()
-    output_row["raw_results"] = raw_results
-    output_row["entities"] = [_format_entity(
-        e) for e in raw_results.get("Entities", [])]
-    for t in ALL_ENTITY_TYPES:
-        output_row[t] = _distinct(
-            [e["text"] for e in output_row["entities"] if e["type"] == t])
-    return output_row
-
-
-def _format_entity(e):
-    return {
-        "type": e.get("Type"),
-        "text": e.get("Text"),
-        "score": e.get("Score"),
-        "beginOffset": e.get("BeginOffset"),
-        "endOffset": e.get("EndOffset"),
-    }
-
-
-def _distinct(l):
-    return list(dict.fromkeys(l))
+        entities = response.get("Entities", [])
+        for entity_enum in EntityTypesEnum:
+            entity_type_column = generate_unique(
+                "entity_type_" + str(entity_enum.value).lower(),
+                row.keys(), column_prefix)
+            row[entity_type_column] = [
+                e.get("Text") for e in entities
+                if e.get("Type", "") == entity_enum.name]
+            if len(row[entity_type_column]) == 0:
+                row[entity_type_column] = ''
+    return row
