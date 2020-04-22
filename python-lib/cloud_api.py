@@ -16,13 +16,14 @@ from io_utils import (
 
 API_EXCEPTIONS = (Boto3Error, BotoCoreError, ClientError)
 
+API_SUPPORT_BATCH = False
 BATCH_RESULT_KEY = "ResultList"
 BATCH_ERROR_KEY = "ErrorList"
 BATCH_INDEX_KEY = "Index"
 BATCH_ERROR_MESSAGE_KEY = "ErrorMessage"
 BATCH_ERROR_TYPE_KEY = "ErrorCode"
 
-DEFAULT_AXIS_NUMBER = 1
+APPLY_AXIS = 1  # columns
 
 ALL_ENTITY_TYPES = [
     'COMMERCIAL_ITEM', 'DATE', 'EVENT', 'LOCATION', 'ORGANIZATION',

@@ -11,11 +11,11 @@ import pandas as pd
 from more_itertools import chunked, flatten
 from tqdm.auto import tqdm as tqdm_auto
 
-from io_utils import (
+from plugin_io_utils import (
     COLUMN_PREFIX, ErrorHandlingEnum, build_unique_column_names)
-from dku_aws_nlp import (
-    API_EXCEPTIONS, BATCH_RESULT_KEY, BATCH_ERROR_KEY, BATCH_INDEX_KEY,
-    BATCH_ERROR_MESSAGE_KEY, BATCH_ERROR_TYPE_KEY)
+from cloud_api import (
+    API_EXCEPTIONS, API_SUPPORT_BATCH, BATCH_RESULT_KEY, BATCH_ERROR_KEY,
+    BATCH_INDEX_KEY, BATCH_ERROR_MESSAGE_KEY, BATCH_ERROR_TYPE_KEY)
 
 # ==============================================================================
 # CONSTANT DEFINITION
@@ -23,7 +23,7 @@ from dku_aws_nlp import (
 
 PARALLEL_WORKERS = 4
 BATCH_SIZE = 10
-
+VERBOSE = False
 
 # ==============================================================================
 # CLASS AND FUNCTION DEFINITION
@@ -36,7 +36,7 @@ def api_call_single_row(
     row: Dict,
     api_exceptions: Union[Exception, Tuple[Exception]] = API_EXCEPTIONS,
     error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
-    verbose: bool = False,
+    verbose: bool = VERBOSE,
     **api_call_function_kwargs
 ) -> Dict:
     """
@@ -80,7 +80,7 @@ def api_call_batch(
     batch_error_type_key: AnyStr = BATCH_ERROR_TYPE_KEY,
     api_exceptions: Union[Exception, Tuple[Exception]] = API_EXCEPTIONS,
     error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
-    verbose: bool = False,
+    verbose: bool = VERBOSE,
     **api_call_function_kwargs
 ) -> List[Dict]:
     """
@@ -143,7 +143,7 @@ def convert_api_results_to_df(
     api_results: List[Dict],
     api_column_names: NamedTuple,
     error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
-    verbose: bool = False
+    verbose: bool = VERBOSE
 ) -> pd.DataFrame:
     """
     Helper function to the "api_parallelizer" main function.
@@ -179,12 +179,12 @@ def api_parallelizer(
     input_df: pd.DataFrame,
     api_call_function: Callable,
     parallel_workers: int = PARALLEL_WORKERS,
-    api_support_batch: bool = False,
+    api_support_batch: bool = API_SUPPORT_BATCH,
     batch_size: int = BATCH_SIZE,
     error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
     column_prefix: AnyStr = COLUMN_PREFIX,
     api_exceptions: Union[Exception, Tuple[Exception]] = API_EXCEPTIONS,
-    verbose: bool = False,
+    verbose: bool = VERBOSE,
     **api_call_function_kwargs
 ) -> pd.DataFrame:
     """
