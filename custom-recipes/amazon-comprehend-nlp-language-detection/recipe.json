@@ -68,7 +68,7 @@
                     "label": "Log"
                 }
             ],
-            "defaultValue": "FAIL",
+            "defaultValue": "LOG",
             "mandatory": true,
             "description": "Log API errors to the output or fail with an exception"
         }
