@@ -28,7 +28,7 @@
     ],
     "params": [
         {
-            "name": "separator1",
+            "name": "separator_input",
             "label": "Input Parameters",
             "type": "SEPARATOR"
         },
@@ -43,46 +43,60 @@
             ]
         },
         {
-            "name": "detection_type",
-            "label": "Detection type",
+            "name": "language",
+            "label": "Language",
             "type": "SELECT",
             "mandatory": true,
             "selectChoices": [
                 {
-                    "value": "medical",
+                    "value": "en",
+                    "label": "English"
+                }
+            ],
+            "defaultValue": "en",
+            "description": "Only supported language"
+        },
+        {
+            "name": "separator_output",
+            "label": "Output Parameters",
+            "type": "SEPARATOR"
+        },
+        {
+            "type": "SELECT",
+            "name": "medical_detection_type",
+            "label": "Detection type",
+            "mandatory": true,
+            "selectChoices": [
+                {
+                    "value": "ENTITIES",
                     "label": "Medical entities"
                 },
                 {
-                    "value": "phi",
+                    "value": "PHI",
                     "label": "Protected Health Information"
                 }
             ],
-            "defaultValue": "medical"
-        },
-        {
-            "name": "separator2",
-            "label": "Output Parameters",
-            "type": "SEPARATOR"
+            "defaultValue": "entities"
         },
         {
             "name": "output_format",
             "label": "Format",
             "type": "SELECT",
+            "mandatory": true,
             "selectChoices": [
                 {
-                    "value": "single_column",
-                    "label": "Single JSON column "
+                    "value": "SINGLE_COLUMN",
+                    "label": "Single JSON column"
                 },
                 {
-                    "value": "multiple_columns",
-                    "label": "Multiple columns by entity type"
+                    "value": "MULTIPLE_COLUMNS",
+                    "label": "Multiple columns"
                 }
             ],
-            "defaultValue": "multiple_columns",
-            "mandatory": true
+            "defaultValue": "MULTIPLE_COLUMNS"
         },
         {
-            "name": "separator3",
+            "name": "separator_configuration",
             "label": "Configuration",
             "type": "SEPARATOR"
         },
@@ -99,16 +113,17 @@
             "type": "SELECT",
             "selectChoices": [
                 {
-                    "value": "fail",
+                    "value": "FAIL",
                     "label": "Fail"
                 },
                 {
-                    "value": "warn",
-                    "label": "Warn"
+                    "value": "LOG",
+                    "label": "Log"
                 }
             ],
-            "defaultValue": "warn",
-            "mandatory": true
+            "defaultValue": "LOG",
+            "mandatory": true,
+            "description": "Log API errors to the output or fail with an exception"
         }
     ],
     "resourceKeys": []

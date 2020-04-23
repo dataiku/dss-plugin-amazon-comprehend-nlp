@@ -44,7 +44,7 @@
             "description": "Maximum number of requests per period for a given DSS activity",
             "type": "INT",
             "mandatory": true,
-            "defaultValue": 100,
+            "defaultValue": 1000,
             "minI": 1
         },
         {
@@ -53,7 +53,7 @@
             "description": "Reset period of the quota in seconds",
             "type": "INT",
             "mandatory": true,
-            "defaultValue": 30,
+            "defaultValue": 10,
             "minI": 1
         },
         {

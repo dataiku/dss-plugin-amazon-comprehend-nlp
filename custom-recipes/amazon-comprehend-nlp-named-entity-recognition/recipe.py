@@ -49,7 +49,7 @@ if text_language == "language_column":
     validate_column_input(language_column, input_columns_names)
 
 input_df = input_dataset.get_dataframe()
-client = get_client(api_configuration_preset)
+client = get_client(api_configuration_preset, "comprehend")
 column_prefix = "ner_api"
 api_column_names = build_unique_column_names(input_df, column_prefix)
 

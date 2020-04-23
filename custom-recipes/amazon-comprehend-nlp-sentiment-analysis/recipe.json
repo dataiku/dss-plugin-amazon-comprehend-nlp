@@ -1,7 +1,7 @@
 {
     "meta": {
         "label": "Sentiment Analysis",
-        "description": "Analyze the sentiment polarity (positive, negative, neutral) of a text",
+        "description": "Analyze the sentiment polarity (positive, negative, neutral, mixed) of a text",
         "icon": "icon-amazon-comprehend icon-cloud"
     },
     "kind": "PYTHON",
@@ -28,7 +28,7 @@
     ],
     "params": [
         {
-            "name": "separator1",
+            "name": "separator_input",
             "label": "Input Parameters",
             "type": "SEPARATOR"
         },
@@ -49,8 +49,20 @@
             "mandatory": true,
             "selectChoices": [
                 {
-                    "value": "auto",
-                    "label": "Auto-detect"
+                    "value": "language_column",
+                    "label": "Detected language column"
+                },
+                {
+                    "value": "ar",
+                    "label": "Arabic"
+                },
+                {
+                    "value": "zh",
+                    "label": "Chinese (Simplified)"
+                },
+                {
+                    "value": "zh-TW",
+                    "label": "Chinese (Traditional)"
                 },
                 {
                     "value": "en",
@@ -65,8 +77,20 @@
                     "label": "German"
                 },
                 {
+                    "value": "hi",
+                    "label": "Hindi"
+                },
+                {
                     "value": "it",
                     "label": "Italian"
+                },
+                {
+                    "value": "ja",
+                    "label": "Japanese"
+                },
+                {
+                    "value": "ko",
+                    "label": "Korean"
                 },
                 {
                     "value": "pt",
@@ -77,10 +101,21 @@
                     "label": "Spanish"
                 }
             ],
-            "defaultValue": "auto"
+            "defaultValue": "en"
         },
         {
-            "name": "separator3",
+            "name": "language_column",
+            "label": "Language column",
+            "type": "COLUMN",
+            "columnRole": "input_dataset",
+            "mandatory": false,
+            "allowedColumnTypes": [
+                "string"
+            ],
+            "visibilityCondition": "model.language == 'language_column'"
+        },
+        {
+            "name": "separator_configuration",
             "label": "Configuration",
             "type": "SEPARATOR"
         },
@@ -97,16 +132,17 @@
             "type": "SELECT",
             "selectChoices": [
                 {
-                    "value": "fail",
+                    "value": "FAIL",
                     "label": "Fail"
                 },
                 {
-                    "value": "warn",
-                    "label": "Warn"
+                    "value": "LOG",
+                    "label": "Log"
                 }
             ],
-            "defaultValue": "warn",
-            "mandatory": true
+            "defaultValue": "LOG",
+            "mandatory": true,
+            "description": "Log API errors to the output or fail with an exception"
         }
     ],
     "resourceKeys": []

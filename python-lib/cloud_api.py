@@ -39,16 +39,37 @@ class EntityTypesEnum(Enum):
     TITLE = "title"
 
 
+class MedicalDetectionTypeEnum(Enum):
+    ENTITIES = "Medical entities"
+    PHI = "Protected Health Information"
+
+
+class MedicalEntityCategoriesEnum(Enum):
+    ANATOMY = "anatomy"
+    MEDICAL_CONDITION = "medical_condition"
+    MEDICATION = "medication"
+    PROTECTED_HEALTH_INFORMATION = "protected_health_information"
+    TEST_TREATMENT_PROCEDURE = "test_treatment_procedure"
+    TIME_EXPRESSION = "time_expression"
+
+
+class MedicalPHITypesEnum(Enum):
+    AGE = "age"
+    DATE = "date"
+    NAME = "name"
+    PHONE_OR_FAX = "phone_or_fax"
+    EMAIL = "email"
+    ID = "id"
+
+
 # ==============================================================================
 # FUNCTION DEFINITION
 # ==============================================================================
 
-# TODO rewrite everything
 
-
-def get_client(api_configuration_preset):
+def get_client(api_configuration_preset, service_name: AnyStr):
     client = boto3.client(
-        service_name='comprehend',
+        service_name=service_name,
         aws_access_key_id=api_configuration_preset.get('aws_access_key'),
         aws_secret_access_key=api_configuration_preset.get('aws_secret_key'),
         region_name=api_configuration_preset.get('aws_region'))
@@ -115,9 +136,9 @@ def format_named_entity_recognition(
     raw_response = row[response_column]
     response = safe_json_loads(raw_response, error_handling)
     if output_format == OutputFormatEnum.SINGLE_COLUMN:
-        key_phrase_column = generate_unique(
+        entity_column = generate_unique(
             "entities", row.keys(), column_prefix)
-        row[key_phrase_column] = response.get("Entities", "")
+        row[entity_column] = response.get("Entities", "")
     else:
         entities = response.get("Entities", [])
         for entity_enum in EntityTypesEnum:
@@ -129,4 +150,54 @@ def format_named_entity_recognition(
                 if e.get("Type", "") == entity_enum.name]
             if len(row[entity_type_column]) == 0:
                 row[entity_type_column] = ''
+    return row
+
+
+def format_medical_information_detection(
+    row: Dict,
+    response_column: AnyStr,
+    medical_detection_type: MedicalDetectionTypeEnum,
+    output_format: OutputFormatEnum = OutputFormatEnum.MULTIPLE_COLUMNS,
+    column_prefix: AnyStr = "medical_api",
+    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG
+) -> Dict:
+    raw_response = row[response_column]
+    response = safe_json_loads(raw_response, error_handling)
+    if medical_detection_type == MedicalDetectionTypeEnum.PHI:
+        column_prefix += "_phi"
+    if output_format == OutputFormatEnum.SINGLE_COLUMN:
+        medical_entities_column = generate_unique(
+            "entities", row.keys(), column_prefix)
+        entities = str(response.get("Entities", "")).replace("[]", "")
+        row[medical_entities_column] = entities
+    else:
+        entities = response.get("Entities", [])
+        if medical_detection_type == MedicalDetectionTypeEnum.ENTITIES:
+            entities_enum = MedicalEntityCategoriesEnum
+            entity_key = "Category"
+        else:
+            entities_enum = MedicalPHITypesEnum
+            entity_key = "Type"
+        for entity_enum in entities_enum:
+            entity_type_column = generate_unique(
+                "entity_type_" + str(entity_enum.value).lower(),
+                row.keys(), column_prefix)
+            row[entity_type_column] = [
+                e for e in entities
+                if e.get(entity_key, "") == entity_enum.name]
+            if len(row[entity_type_column]) == 0:
+                row[entity_type_column] = ''
+    return row
+
+
+def format_sentiment_analysis(
+    row: Dict,
+    response_column: AnyStr,
+    column_prefix: AnyStr = "sentiment_api",
+    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG
+) -> Dict:
+    raw_response = row[response_column]
+    response = safe_json_loads(raw_response, error_handling)
+    sentiment_column = generate_unique("sentiment", row.keys(), column_prefix)
+    row[sentiment_column] = response.get("Sentiment", '')
     return row

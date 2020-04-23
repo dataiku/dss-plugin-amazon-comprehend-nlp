@@ -39,7 +39,7 @@ output_dataset = dataiku.Dataset(output_dataset_name)
 
 validate_column_input(text_column, input_columns_names)
 input_df = input_dataset.get_dataframe()
-client = get_client(api_configuration_preset)
+client = get_client(api_configuration_preset, "comprehend")
 column_prefix = "lang_detect_api"
 api_column_names = build_unique_column_names(input_df, column_prefix)
 
