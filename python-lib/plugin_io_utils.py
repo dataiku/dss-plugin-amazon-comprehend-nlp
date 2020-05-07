@@ -31,9 +31,7 @@ class OutputFormatEnum(Enum):
 
 
 def generate_unique(
-    name: AnyStr,
-    existing_names: List,
-    prefix: AnyStr = COLUMN_PREFIX
+    name: AnyStr, existing_names: List, prefix: AnyStr = COLUMN_PREFIX
 ) -> AnyStr:
     """
     Generate a unique name among existing ones by suffixing a number.
@@ -51,8 +49,7 @@ def generate_unique(
 
 
 def build_unique_column_names(
-    existing_names: List[AnyStr],
-    column_prefix: AnyStr = COLUMN_PREFIX
+    existing_names: List[AnyStr], column_prefix: AnyStr = COLUMN_PREFIX
 ) -> NamedTuple:
     """
     Helper function to the "api_parallelizer" main function.
@@ -60,14 +57,16 @@ def build_unique_column_names(
     adding a prefix and a number suffix to make them unique.
     """
     api_column_names = ApiColumnNameTuple(
-        *[generate_unique(k, existing_names, column_prefix)
-          for k in ApiColumnNameTuple._fields])
+        *[
+            generate_unique(k, existing_names, column_prefix)
+            for k in ApiColumnNameTuple._fields
+        ]
+    )
     return api_column_names
 
 
 def safe_json_loads(
-    str_to_check: AnyStr,
-    error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
+    str_to_check: AnyStr, error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
 ) -> Dict:
     """
     Wrap json.loads with an additional parameter to handle errors:
@@ -90,9 +89,8 @@ def validate_column_input(column_name: AnyStr, column_list: List[AnyStr]):
     Validate that user input for column parameter is valid.
     """
     if column_name is None or len(column_name) == 0:
-        raise ValueError(
-            "You must specify the '{}' column.".format(column_name))
+        raise ValueError("You must specify the '{}' column.".format(column_name))
     if column_name not in column_list:
         raise ValueError(
-            "Column '{}' is not present in the input dataset.".format(
-                column_name))
+            "Column '{}' is not present in the input dataset.".format(column_name)
+        )
