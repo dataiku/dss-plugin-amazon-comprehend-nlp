@@ -14,7 +14,7 @@ from plugin_io_utils import (
 from api_parallelizer import api_parallelizer
 from dataiku.customrecipe import (
     get_recipe_config, get_input_names_for_role, get_output_names_for_role)
-from cloud_api import (
+from api_formatting import (
     APPLY_AXIS, get_client, format_named_entity_recognition)
 
 
@@ -50,7 +50,7 @@ if text_language == "language_column":
 
 input_df = input_dataset.get_dataframe()
 client = get_client(api_configuration_preset, "comprehend")
-column_prefix = "ner_api"
+column_prefix = "entity_api"
 api_column_names = build_unique_column_names(input_df, column_prefix)
 
 

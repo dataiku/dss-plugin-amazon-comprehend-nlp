@@ -2,8 +2,9 @@
     "id": "amazon-comprehend-nlp",
     "version": "1.0.0",
     "meta": {
-        "label": "Amazon Comprehend NLP",
-        "description": "Use Amazon Comprehend APIs to perform Language Detection, Sentiment Analysis, Named Entity Recognition, Key Phrashe Extraction and Medical Information Detection",
+        "label": "Amazon Comprehend",
+        "category": "Natural Language Processing",
+        "description": "Use Amazon Comprehend APIs to perform Language Detection, Sentiment Analysis, Named Entity Recognition and Key Phrase Extraction",
         "author": "Dataiku (Alex COMBESSIE and Joachim ZENTICI)",
         "icon": "icon-amazon-comprehend icon-cloud",
         "licenseInfo": "Apache Software License",

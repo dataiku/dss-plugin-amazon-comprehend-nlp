@@ -2,7 +2,8 @@
     "meta": {
         "label": "Sentiment Analysis",
         "description": "Analyze the sentiment polarity (positive, negative, neutral, mixed) of a text",
-        "icon": "icon-amazon-comprehend icon-cloud"
+        "icon": "icon-amazon-comprehend icon-cloud",
+        "displayOrderRank": 2
     },
     "kind": "PYTHON",
     "selectableFromDataset": "input_dataset",
@@ -127,9 +128,21 @@
             "mandatory": true
         },
         {
+            "name": "separator_advanced",
+            "label": "Advanced",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "expert",
+            "label": "Expert mode",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
             "name": "error_handling",
             "label": "API error handling",
             "type": "SELECT",
+            "visibilityCondition": "model.expert == true",
             "selectChoices": [
                 {
                     "value": "FAIL",
@@ -142,7 +155,7 @@
             ],
             "defaultValue": "LOG",
             "mandatory": true,
-            "description": "Log API errors to the output or fail with an exception"
+            "description": "Log API errors to the output or fail with an exception on any API error"
         }
     ],
     "resourceKeys": []

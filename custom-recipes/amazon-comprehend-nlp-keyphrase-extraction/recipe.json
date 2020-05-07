@@ -2,7 +2,8 @@
     "meta": {
         "label": "Key Phrase Extraction",
         "description": "Extract key phrases (1-4 words each) in a text to identify the main points",
-        "icon": "icon-amazon-comprehend icon-cloud"
+        "icon": "icon-amazon-comprehend icon-cloud",
+        "displayOrderRank": 4
     },
     "kind": "PYTHON",
     "selectableFromDataset": "input_dataset",
@@ -115,39 +116,6 @@
             "visibilityCondition": "model.language == 'language_column'"
         },
         {
-            "name": "separator_output",
-            "label": "Output Parameters",
-            "type": "SEPARATOR"
-        },
-        {
-            "name": "output_format",
-            "label": "Format",
-            "type": "SELECT",
-            "mandatory": true,
-            "selectChoices": [
-                {
-                    "value": "SINGLE_COLUMN",
-                    "label": "Single JSON column"
-                },
-                {
-                    "value": "MULTIPLE_COLUMNS",
-                    "label": "Multiple columns by key phrase"
-                }
-            ],
-            "defaultValue": "MULTIPLE_COLUMNS"
-        },
-        {
-            "name": "num_key_phrases",
-            "label": "Number of key phrases",
-            "description": "Maximum number of key phrases to extract",
-            "type": "INT",
-            "mandatory": true,
-            "defaultValue": 3,
-            "minI": 1,
-            "maxI": 100,
-            "visibilityCondition": "model.output_format == 'MULTIPLE_COLUMNS'"
-        },
-        {
             "name": "separator_configuration",
             "label": "Configuration",
             "type": "SEPARATOR"
@@ -160,9 +128,32 @@
             "mandatory": true
         },
         {
+            "name": "separator_advanced",
+            "label": "Advanced",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "expert",
+            "label": "Expert mode",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
+            "name": "num_key_phrases",
+            "label": "Number of key phrases",
+            "description": "Maximum number of key phrases to extract",
+            "visibilityCondition": "model.expert == true",
+            "type": "INT",
+            "mandatory": true,
+            "defaultValue": 3,
+            "minI": 1,
+            "maxI": 100
+        },
+        {
             "name": "error_handling",
             "label": "API error handling",
             "type": "SELECT",
+            "visibilityCondition": "model.expert == true",
             "selectChoices": [
                 {
                     "value": "FAIL",
@@ -175,7 +166,7 @@
             ],
             "defaultValue": "LOG",
             "mandatory": true,
-            "description": "Log API errors to the output or fail with an exception"
+            "description": "Log API errors to the output or fail with an exception on any API error"
         }
     ]
 }

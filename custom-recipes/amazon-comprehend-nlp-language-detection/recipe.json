@@ -1,8 +1,9 @@
 {
     "meta": {
         "label": "Language Detection",
-        "description": "Detect the dominant language of a text",
-        "icon": "icon-amazon-comprehend icon-cloud"
+        "description": "Detect the dominant language of a text (recommended first step)",
+        "icon": "icon-amazon-comprehend icon-cloud",
+        "displayOrderRank": 1
     },
     "kind": "PYTHON",
     "selectableFromDataset": "input_dataset",
@@ -55,9 +56,21 @@
             "mandatory": true
         },
         {
+            "name": "separator_advanced",
+            "label": "Advanced",
+            "type": "SEPARATOR"
+        },
+        {
+            "name": "expert",
+            "label": "Expert mode",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        },
+        {
             "name": "error_handling",
             "label": "API error handling",
             "type": "SELECT",
+            "visibilityCondition": "model.expert == true",
             "selectChoices": [
                 {
                     "value": "FAIL",
@@ -70,7 +83,7 @@
             ],
             "defaultValue": "LOG",
             "mandatory": true,
-            "description": "Log API errors to the output or fail with an exception"
+            "description": "Log API errors to the output or fail with an exception on any API error"
         }
     ]
 }
