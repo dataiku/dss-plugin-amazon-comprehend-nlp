@@ -46,6 +46,7 @@
         {
             "name": "language",
             "label": "Language",
+            "description": "List of supported languages",
             "type": "SELECT",
             "mandatory": true,
             "selectChoices": [
@@ -141,7 +142,7 @@
         {
             "name": "num_key_phrases",
             "label": "Number of key phrases",
-            "description": "Maximum number of key phrases to extract",
+            "description": "Number of key phrases to extract from the API response",
             "visibilityCondition": "model.expert == true",
             "type": "INT",
             "mandatory": true,

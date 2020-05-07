@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
-import logging
 import json
 from typing import List, Dict, AnyStr, Union
 
-from ratelimit import limits, RateLimitException
 from retry import retry
+from ratelimit import limits, RateLimitException
 
 import dataiku
 
 from plugin_io_utils import (
     ErrorHandlingEnum,
-    OutputFormatEnum,
-    build_unique_column_names,
     validate_column_input,
+    set_column_description,
 )
 from api_parallelizer import api_parallelizer
 from dataiku.customrecipe import (
@@ -20,7 +18,7 @@ from dataiku.customrecipe import (
     get_input_names_for_role,
     get_output_names_for_role,
 )
-from api_formatting import APPLY_AXIS, get_client, format_key_phrase_extraction
+from api_formatting import get_client, KeyPhraseExtractionAPIFormatter
 
 
 # ==============================================================================
@@ -35,7 +33,6 @@ batch_size = api_configuration_preset.get("batch_size")
 text_column = get_recipe_config().get("text_column")
 text_language = get_recipe_config().get("language")
 language_column = get_recipe_config().get("language_column")
-output_format = OutputFormatEnum[get_recipe_config().get("output_format")]
 num_key_phrases = int(get_recipe_config().get("num_key_phrases"))
 error_handling = ErrorHandlingEnum[get_recipe_config().get("error_handling")]
 
@@ -57,7 +54,6 @@ if text_language == "language_column":
 input_df = input_dataset.get_dataframe()
 client = get_client(api_configuration_preset, "comprehend")
 column_prefix = "keyphrase_api"
-api_column_names = build_unique_column_names(input_df, column_prefix)
 
 
 # ==============================================================================
@@ -96,7 +92,7 @@ def call_api_key_phrase_extraction(
         return responses
 
 
-output_df = api_parallelizer(
+df = api_parallelizer(
     input_df=input_df,
     api_call_function=call_api_key_phrase_extraction,
     text_column=text_column,
@@ -109,16 +105,17 @@ output_df = api_parallelizer(
     column_prefix=column_prefix,
 )
 
-logging.info("Formatting API results...")
-output_df = output_df.apply(
-    func=format_key_phrase_extraction,
-    axis=APPLY_AXIS,
-    response_column=api_column_names.response,
-    output_format=output_format,
+api_formatter = KeyPhraseExtractionAPIFormatter(
+    input_df=input_df,
     num_key_phrases=num_key_phrases,
     column_prefix=column_prefix,
     error_handling=error_handling,
 )
-logging.info("Formatting API results: Done.")
+output_df = api_formatter.format_df(df)
 
 output_dataset.write_with_schema(output_df)
+set_column_description(
+    input_dataset=input_dataset,
+    output_dataset=output_dataset,
+    column_description_dict=api_formatter.column_description_dict,
+)

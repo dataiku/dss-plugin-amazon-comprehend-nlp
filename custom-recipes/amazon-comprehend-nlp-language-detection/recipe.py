@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import logging
 from typing import List, Dict, AnyStr
 
 from retry import retry
@@ -9,8 +8,8 @@ import dataiku
 
 from plugin_io_utils import (
     ErrorHandlingEnum,
-    build_unique_column_names,
     validate_column_input,
+    set_column_description,
 )
 from api_parallelizer import api_parallelizer
 from dataiku.customrecipe import (
@@ -18,12 +17,7 @@ from dataiku.customrecipe import (
     get_input_names_for_role,
     get_output_names_for_role,
 )
-from api_formatting import (
-    API_SUPPORT_BATCH,
-    APPLY_AXIS,
-    get_client,
-    format_language_detection,
-)
+from api_formatting import get_client, LanguageDetectionAPIFormatter
 
 
 # ==============================================================================
@@ -49,8 +43,8 @@ output_dataset = dataiku.Dataset(output_dataset_name)
 validate_column_input(text_column, input_columns_names)
 input_df = input_dataset.get_dataframe()
 client = get_client(api_configuration_preset, "comprehend")
+api_support_batch = True
 column_prefix = "lang_detect_api"
-api_column_names = build_unique_column_names(input_df, column_prefix)
 
 
 # ==============================================================================
@@ -66,25 +60,25 @@ def call_api_language_detection(batch: List[Dict], text_column: AnyStr) -> List[
     return responses
 
 
-output_df = api_parallelizer(
+df = api_parallelizer(
     input_df=input_df,
     api_call_function=call_api_language_detection,
     text_column=text_column,
     parallel_workers=parallel_workers,
-    api_support_batch=API_SUPPORT_BATCH,
+    api_support_batch=api_support_batch,
     batch_size=batch_size,
     error_handling=error_handling,
     column_prefix=column_prefix,
 )
 
-logging.info("Formatting API results...")
-output_df = output_df.apply(
-    func=format_language_detection,
-    axis=APPLY_AXIS,
-    response_column=api_column_names.response,
-    error_handling=error_handling,
-    column_prefix=column_prefix,
+api_formatter = LanguageDetectionAPIFormatter(
+    input_df=input_df, column_prefix=column_prefix, error_handling=error_handling,
 )
-logging.info("Formatting API results: Done.")
+output_df = api_formatter.format_df(df)
 
 output_dataset.write_with_schema(output_df)
+set_column_description(
+    input_dataset=input_dataset,
+    output_dataset=output_dataset,
+    column_description_dict=api_formatter.column_description_dict,
+)

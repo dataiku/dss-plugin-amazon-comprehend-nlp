@@ -46,6 +46,7 @@
         {
             "name": "language",
             "label": "Language",
+            "description": "List of supported languages",
             "type": "SELECT",
             "mandatory": true,
             "selectChoices": [

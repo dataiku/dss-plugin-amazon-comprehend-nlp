@@ -1,6 +1,7 @@
 {
     "meta": {
         "label": "API configuration",
+        "description": "Define presets for users to call the API with specific credentials, quota and parallelization parameters",
         "icon": "icon-amazon-comprehend icon-cloud"
     },
     "defaultDefinableAtProjectLevel": true,

@@ -46,6 +46,7 @@
         {
             "name": "language",
             "label": "Language",
+            "description": "List of supported languages",
             "type": "SELECT",
             "mandatory": true,
             "selectChoices": [
@@ -137,6 +138,59 @@
             "label": "Expert mode",
             "type": "BOOLEAN",
             "defaultValue": false
+        },
+        {
+            "name": "entity_types",
+            "label": "Entity types",
+            "type": "MULTISELECT",
+            "visibilityCondition": "model.expert == true",
+            "description": "List of entity types to extract",
+            "mandatory": true,
+            "selectChoices": [
+                {
+                    "value": "COMMERCIAL_ITEM",
+                    "label": "Commercial item"
+                },
+                {
+                    "value": "DATE",
+                    "label": "Date"
+                },
+                {
+                    "value": "EVENT",
+                    "label": "Event"
+                },
+                {
+                    "value": "LOCATION",
+                    "label": "Location"
+                },
+                {
+                    "value": "ORGANIZATION",
+                    "label": "Organization"
+                },
+                {
+                    "value": "OTHER",
+                    "label": "Other"
+                },
+                {
+                    "value": "PERSON",
+                    "label": "Person"
+                },
+                {
+                    "value": "QUANTITY",
+                    "label": "Quantity"
+                },
+                {
+                    "value": "TITLE",
+                    "label": "Title"
+                }
+            ],
+            "defaultValue": [
+                "COMMERCIAL_ITEM",
+                "EVENT",
+                "LOCATION",
+                "ORGANIZATION",
+                "PERSON"
+            ]
         },
         {
             "name": "error_handling",

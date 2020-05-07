@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
-import logging
 import json
 from typing import List, Dict, AnyStr, Union
 
-from ratelimit import limits, RateLimitException
 from retry import retry
+from ratelimit import limits, RateLimitException
 
 import dataiku
 
 from plugin_io_utils import (
     ErrorHandlingEnum,
-    build_unique_column_names,
     validate_column_input,
+    set_column_description,
 )
 from api_parallelizer import api_parallelizer
 from dataiku.customrecipe import (
@@ -19,7 +18,7 @@ from dataiku.customrecipe import (
     get_input_names_for_role,
     get_output_names_for_role,
 )
-from api_formatting import APPLY_AXIS, get_client, format_sentiment_analysis
+from api_formatting import get_client, SentimentAnalysisAPIFormatter
 
 
 # ==============================================================================
@@ -54,7 +53,6 @@ if text_language == "language_column":
 input_df = input_dataset.get_dataframe()
 client = get_client(api_configuration_preset, "comprehend")
 column_prefix = "sentiment_api"
-api_column_names = build_unique_column_names(input_df, column_prefix)
 
 
 # ==============================================================================
@@ -93,7 +91,7 @@ def call_api_sentiment_analysis(
         return responses
 
 
-output_df = api_parallelizer(
+df = api_parallelizer(
     input_df=input_df,
     api_call_function=call_api_sentiment_analysis,
     text_column=text_column,
@@ -106,14 +104,14 @@ output_df = api_parallelizer(
     column_prefix=column_prefix,
 )
 
-logging.info("Formatting API results...")
-output_df = output_df.apply(
-    func=format_sentiment_analysis,
-    axis=APPLY_AXIS,
-    response_column=api_column_names.response,
-    column_prefix=column_prefix,
-    error_handling=error_handling,
+api_formatter = SentimentAnalysisAPIFormatter(
+    input_df=input_df, column_prefix=column_prefix, error_handling=error_handling,
 )
-logging.info("Formatting API results: Done.")
+output_df = api_formatter.format_df(df)
 
 output_dataset.write_with_schema(output_df)
+set_column_description(
+    input_dataset=input_dataset,
+    output_dataset=output_dataset,
+    column_description_dict=api_formatter.column_description_dict,
+)
