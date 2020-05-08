@@ -38,6 +38,9 @@ text_column = get_recipe_config().get("text_column")
 text_language = get_recipe_config().get("language")
 language_column = get_recipe_config().get("language_column")
 entity_types = [EntityTypeEnum[i] for i in get_recipe_config().get("entity_types", [])]
+minimum_score = float(get_recipe_config().get("minimum_score", 0))
+if minimum_score < 0 or minimum_score > 1:
+    raise ValueError("Minimum confidence score must be between 0 and 1")
 error_handling = ErrorHandlingEnum[get_recipe_config().get("error_handling")]
 
 input_dataset_name = get_input_names_for_role("input_dataset")[0]
@@ -112,6 +115,7 @@ df = api_parallelizer(
 api_formatter = NamedEntityRecognitionAPIFormatter(
     input_df=input_df,
     entity_types=entity_types,
+    minimum_score=minimum_score,
     column_prefix=column_prefix,
     error_handling=error_handling,
 )
