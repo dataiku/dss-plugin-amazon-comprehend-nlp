@@ -62,7 +62,41 @@ def get_client(api_configuration_preset, service_name: AnyStr):
     return client
 
 
-class LanguageDetectionAPIFormatter:
+class GenericAPIFormatter:
+    """
+    Geric Formatter class for API responses:
+    - initialize with generic parameters
+    - compute generic column descriptions
+    - apply format_row to dataframe
+    """
+
+    def __init__(
+        self,
+        input_df: pd.DataFrame,
+        column_prefix: AnyStr = "api",
+        error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
+    ):
+        self.input_df = input_df
+        self.column_prefix = column_prefix
+        self.error_handling = error_handling
+        self.api_column_names = build_unique_column_names(input_df, column_prefix)
+        self.column_description_dict = {
+            v: API_COLUMN_NAMES_DESCRIPTION_DICT[k]
+            for k, v in self.api_column_names._asdict().items()
+        }
+
+    def format_row(self, row: Dict) -> Dict:
+        return row
+
+    def format_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        logging.info("Formatting API results...")
+        df = df.apply(func=self.format_row, axis=1)
+        df = move_api_columns_to_end(df, self.api_column_names)
+        logging.info("Formatting API results: Done.")
+        return df
+
+
+class LanguageDetectionAPIFormatter(GenericAPIFormatter):
     """
     Formatter class for Language Detection API responses:
     - make sure response is valid JSON
@@ -76,30 +110,22 @@ class LanguageDetectionAPIFormatter:
         column_prefix: AnyStr = "lang_detect_api",
         error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
     ):
-        self.input_df = input_df
-        self.column_prefix = column_prefix
-        self.error_handling = error_handling
-        self.api_column_names = build_unique_column_names(input_df, column_prefix)
+        super().__init__(input_df, column_prefix, error_handling)
         self.language_code_column = generate_unique(
             "language_code", input_df.keys(), self.column_prefix
         )
         self.language_score_column = generate_unique(
             "language_score", input_df.keys(), self.column_prefix
         )
-        self.column_description_dict = self._compute_column_description()
+        self._compute_column_description()
 
     def _compute_column_description(self):
-        column_description_dict = {
-            v: API_COLUMN_NAMES_DESCRIPTION_DICT[k]
-            for k, v in self.api_column_names._asdict().items()
-        }
-        column_description_dict[
+        self.column_description_dict[
             self.language_code_column
         ] = "Language code from the API in ISO 639 format"
-        column_description_dict[
+        self.column_description_dict[
             self.language_score_column
         ] = "Confidence score of the API from 0 to 1"
-        return column_description_dict
 
     def format_row(self, row: Dict) -> Dict:
         raw_response = row[self.api_column_names.response]
@@ -112,15 +138,8 @@ class LanguageDetectionAPIFormatter:
             row[self.language_score_column] = languages[0].get("Score", None)
         return row
 
-    def format_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        logging.info("Formatting API results...")
-        df = df.apply(func=self.format_row, axis=1)
-        df = move_api_columns_to_end(df, self.api_column_names)
-        logging.info("Formatting API results: Done.")
-        return df
 
-
-class SentimentAnalysisAPIFormatter:
+class SentimentAnalysisAPIFormatter(GenericAPIFormatter):
     """
     Formatter class for Sentiment Analysis API responses:
     - make sure response is valid JSON
@@ -134,10 +153,7 @@ class SentimentAnalysisAPIFormatter:
         column_prefix: AnyStr = "sentiment_api",
         error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
     ):
-        self.input_df = input_df
-        self.column_prefix = column_prefix
-        self.error_handling = error_handling
-        self.api_column_names = build_unique_column_names(input_df, column_prefix)
+        super().__init__(input_df, column_prefix, error_handling)
         self.sentiment_prediction_column = generate_unique(
             "prediction", input_df.keys(), column_prefix
         )
@@ -145,23 +161,18 @@ class SentimentAnalysisAPIFormatter:
             p: generate_unique("score_" + p.lower(), input_df.keys(), column_prefix)
             for p in ["Positive", "Neutral", "Negative", "Mixed"]
         }
-        self.column_description_dict = self._compute_column_description()
+        self._compute_column_description()
 
     def _compute_column_description(self):
-        column_description_dict = {
-            v: API_COLUMN_NAMES_DESCRIPTION_DICT[k]
-            for k, v in self.api_column_names._asdict().items()
-        }
-        column_description_dict[
+        self.column_description_dict[
             self.sentiment_prediction_column
         ] = "Sentiment prediction from the API (POSITIVE/NEUTRAL/NEGATIVE/MIXED)"
         for prediction, column_name in self.sentiment_score_column_dict.items():
-            column_description_dict[
+            self.column_description_dict[
                 column_name
             ] = "Confidence score in the {} prediction from 0 to 1".format(
                 prediction.upper()
             )
-        return column_description_dict
 
     def format_row(self, row: Dict) -> Dict:
         raw_response = row[self.api_column_names.response]
@@ -175,15 +186,8 @@ class SentimentAnalysisAPIFormatter:
                 row[column_name] = round(score, 3)
         return row
 
-    def format_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        logging.info("Formatting API results...")
-        df = df.apply(func=self.format_row, axis=1)
-        df = move_api_columns_to_end(df, self.api_column_names)
-        logging.info("Formatting API results: Done.")
-        return df
 
-
-class NamedEntityRecognitionAPIFormatter:
+class NamedEntityRecognitionAPIFormatter(GenericAPIFormatter):
     """
     Formatter class for Named Entity Recognition API responses:
     - make sure response is valid JSON
@@ -199,27 +203,19 @@ class NamedEntityRecognitionAPIFormatter:
         column_prefix: AnyStr = "entity_api",
         error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
     ):
-        self.input_df = input_df
+        super().__init__(input_df, column_prefix, error_handling)
         self.entity_types = entity_types
         self.minimum_score = float(minimum_score)
-        self.column_prefix = column_prefix
-        self.error_handling = error_handling
-        self.api_column_names = build_unique_column_names(input_df, column_prefix)
-        self.column_description_dict = self._compute_column_description()
+        self._compute_column_description()
 
     def _compute_column_description(self):
-        column_description_dict = {
-            v: API_COLUMN_NAMES_DESCRIPTION_DICT[k]
-            for k, v in self.api_column_names._asdict().items()
-        }
         for n, m in EntityTypeEnum.__members__.items():
             entity_type_column = generate_unique(
                 "entity_type_" + n.lower(), self.input_df.keys(), self.column_prefix
             )
-            column_description_dict[
+            self.column_description_dict[
                 entity_type_column
             ] = "List of '{}' entities recognized by the API".format(str(m.value))
-        return column_description_dict
 
     def format_row(self, row: Dict) -> Dict:
         raw_response = row[self.api_column_names.response]
@@ -240,15 +236,8 @@ class NamedEntityRecognitionAPIFormatter:
                 row[entity_type_column] = ""
         return row
 
-    def format_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        logging.info("Formatting API results...")
-        df = df.apply(func=self.format_row, axis=1)
-        df = move_api_columns_to_end(df, self.api_column_names)
-        logging.info("Formatting API results: Done.")
-        return df
 
-
-class KeyPhraseExtractionAPIFormatter:
+class KeyPhraseExtractionAPIFormatter(GenericAPIFormatter):
     """
     Formatter class for Key Phrase Extraction API responses:
     - make sure response is valid JSON
@@ -263,18 +252,11 @@ class KeyPhraseExtractionAPIFormatter:
         column_prefix: AnyStr = "keyphrase_api",
         error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
     ):
-        self.input_df = input_df
+        super().__init__(input_df, column_prefix, error_handling)
         self.num_key_phrases = num_key_phrases
-        self.column_prefix = column_prefix
-        self.error_handling = error_handling
-        self.api_column_names = build_unique_column_names(input_df, column_prefix)
-        self.column_description_dict = self._compute_column_description()
+        self._compute_column_description()
 
     def _compute_column_description(self):
-        column_description_dict = {
-            v: API_COLUMN_NAMES_DESCRIPTION_DICT[k]
-            for k, v in self.api_column_names._asdict().items()
-        }
         for n in range(self.num_key_phrases):
             keyphrase_column = generate_unique(
                 "keyphrase_" + str(n + 1) + "_text",
@@ -286,13 +268,12 @@ class KeyPhraseExtractionAPIFormatter:
                 self.input_df.keys(),
                 self.column_prefix,
             )
-            column_description_dict[
+            self.column_description_dict[
                 keyphrase_column
             ] = "Keyphrase {} extracted by the API".format(str(n + 1))
-            column_description_dict[
+            self.column_description_dict[
                 confidence_column
             ] = "Confidence score in Keyphrase {} from 0 to 1".format(str(n + 1))
-        return column_description_dict
 
     def format_row(self, row: Dict) -> Dict:
         raw_response = row[self.api_column_names.response]
@@ -316,10 +297,3 @@ class KeyPhraseExtractionAPIFormatter:
                 row[keyphrase_column] = ""
                 row[confidence_column] = None
         return row
-
-    def format_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        logging.info("Formatting API results...")
-        df = df.apply(func=self.format_row, axis=1)
-        df = move_api_columns_to_end(df, self.api_column_names)
-        logging.info("Formatting API results: Done.")
-        return df
