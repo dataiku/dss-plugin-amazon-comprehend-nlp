@@ -5,19 +5,28 @@ from retry import retry
 from ratelimit import limits, RateLimitException
 
 import dataiku
+from dataiku.customrecipe import (
+    get_recipe_config,
+    get_input_names_for_role,
+    get_output_names_for_role,
+)
 
 from plugin_io_utils import (
     ErrorHandlingEnum,
     validate_column_input,
     set_column_description,
 )
-from api_parallelizer import api_parallelizer
-from dataiku.customrecipe import (
-    get_recipe_config,
-    get_input_names_for_role,
-    get_output_names_for_role,
+from amazon_comprehend_api_client import (
+    API_EXCEPTIONS,
+    BATCH_RESULT_KEY,
+    BATCH_ERROR_KEY,
+    BATCH_INDEX_KEY,
+    BATCH_ERROR_MESSAGE_KEY,
+    BATCH_ERROR_TYPE_KEY,
+    get_client,
 )
-from api_formatting import get_client, LanguageDetectionAPIFormatter
+from api_parallelizer import api_parallelizer
+from amazon_comprehend_api_formatting import LanguageDetectionAPIFormatter
 
 
 # ==============================================================================
@@ -42,9 +51,17 @@ output_dataset = dataiku.Dataset(output_dataset_name)
 
 validate_column_input(text_column, input_columns_names)
 input_df = input_dataset.get_dataframe()
-client = get_client(api_configuration_preset, "comprehend")
-api_support_batch = True
+client = get_client(api_configuration_preset)
 column_prefix = "lang_detect_api"
+batch_kwargs = {
+    "api_support_batch": True,
+    "batch_size": batch_size,
+    "batch_result_key": BATCH_RESULT_KEY,
+    "batch_error_key": BATCH_ERROR_KEY,
+    "batch_index_key": BATCH_INDEX_KEY,
+    "batch_error_message_key": BATCH_ERROR_MESSAGE_KEY,
+    "batch_error_type_key": BATCH_ERROR_TYPE_KEY,
+}
 
 
 # ==============================================================================
@@ -63,12 +80,12 @@ def call_api_language_detection(batch: List[Dict], text_column: AnyStr) -> List[
 df = api_parallelizer(
     input_df=input_df,
     api_call_function=call_api_language_detection,
+    api_exceptions=API_EXCEPTIONS,
+    column_prefix=column_prefix,
     text_column=text_column,
     parallel_workers=parallel_workers,
-    api_support_batch=api_support_batch,
-    batch_size=batch_size,
     error_handling=error_handling,
-    column_prefix=column_prefix,
+    **batch_kwargs
 )
 
 api_formatter = LanguageDetectionAPIFormatter(

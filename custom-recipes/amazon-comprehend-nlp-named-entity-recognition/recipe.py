@@ -6,23 +6,31 @@ from retry import retry
 from ratelimit import limits, RateLimitException
 
 import dataiku
+from dataiku.customrecipe import (
+    get_recipe_config,
+    get_input_names_for_role,
+    get_output_names_for_role,
+)
 
 from plugin_io_utils import (
     ErrorHandlingEnum,
     validate_column_input,
     set_column_description,
 )
-from api_parallelizer import api_parallelizer
-from dataiku.customrecipe import (
-    get_recipe_config,
-    get_input_names_for_role,
-    get_output_names_for_role,
-)
-from api_formatting import (
-    EntityTypeEnum,
+from amazon_comprehend_api_client import (
+    API_EXCEPTIONS,
+    BATCH_RESULT_KEY,
+    BATCH_ERROR_KEY,
+    BATCH_INDEX_KEY,
+    BATCH_ERROR_MESSAGE_KEY,
+    BATCH_ERROR_TYPE_KEY,
     get_client,
+)
+from amazon_comprehend_api_formatting import (
+    EntityTypeEnum,
     NamedEntityRecognitionAPIFormatter,
 )
+from api_parallelizer import api_parallelizer
 
 
 # ==============================================================================
@@ -38,6 +46,9 @@ text_column = get_recipe_config().get("text_column")
 text_language = get_recipe_config().get("language")
 language_column = get_recipe_config().get("language_column")
 entity_types = [EntityTypeEnum[i] for i in get_recipe_config().get("entity_types", [])]
+minimum_score = float(get_recipe_config().get("minimum_score", 0))
+if minimum_score < 0 or minimum_score > 1:
+    raise ValueError("Minimum confidence score must be between 0 and 1")
 error_handling = ErrorHandlingEnum[get_recipe_config().get("error_handling")]
 
 input_dataset_name = get_input_names_for_role("input_dataset")[0]
@@ -50,13 +61,21 @@ output_dataset = dataiku.Dataset(output_dataset_name)
 
 validate_column_input(text_column, input_columns_names)
 
-api_support_batch = True
+batch_kwargs = {
+    "api_support_batch": True,
+    "batch_size": batch_size,
+    "batch_result_key": BATCH_RESULT_KEY,
+    "batch_error_key": BATCH_ERROR_KEY,
+    "batch_index_key": BATCH_INDEX_KEY,
+    "batch_error_message_key": BATCH_ERROR_MESSAGE_KEY,
+    "batch_error_type_key": BATCH_ERROR_TYPE_KEY,
+}
 if text_language == "language_column":
-    api_support_batch = False
+    batch_kwargs = {"api_support_batch": False}
     validate_column_input(language_column, input_columns_names)
 
 input_df = input_dataset.get_dataframe()
-client = get_client(api_configuration_preset, "comprehend")
+client = get_client(api_configuration_preset)
 column_prefix = "entity_api"
 
 
@@ -99,19 +118,20 @@ def call_api_named_entity_recognition(
 df = api_parallelizer(
     input_df=input_df,
     api_call_function=call_api_named_entity_recognition,
+    api_exceptions=API_EXCEPTIONS,
+    column_prefix=column_prefix,
     text_column=text_column,
     text_language=text_language,
     language_column=language_column,
     parallel_workers=parallel_workers,
-    api_support_batch=api_support_batch,
-    batch_size=batch_size,
     error_handling=error_handling,
-    column_prefix=column_prefix,
+    **batch_kwargs
 )
 
 api_formatter = NamedEntityRecognitionAPIFormatter(
     input_df=input_df,
     entity_types=entity_types,
+    minimum_score=minimum_score,
     column_prefix=column_prefix,
     error_handling=error_handling,
 )
