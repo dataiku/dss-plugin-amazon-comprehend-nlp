@@ -6,26 +6,10 @@ from retry import retry
 from ratelimit import limits, RateLimitException
 
 import dataiku
-from dataiku.customrecipe import (
-    get_recipe_config,
-    get_input_names_for_role,
-    get_output_names_for_role,
-)
+from dataiku.customrecipe import get_recipe_config, get_input_names_for_role, get_output_names_for_role
 
-from plugin_io_utils import (
-    ErrorHandlingEnum,
-    validate_column_input,
-    set_column_description,
-)
-from amazon_comprehend_api_client import (
-    API_EXCEPTIONS,
-    BATCH_RESULT_KEY,
-    BATCH_ERROR_KEY,
-    BATCH_INDEX_KEY,
-    BATCH_ERROR_MESSAGE_KEY,
-    BATCH_ERROR_TYPE_KEY,
-    get_client,
-)
+from plugin_io_utils import ErrorHandlingEnum, validate_column_input, set_column_description
+from amazon_comprehend_api_client import API_EXCEPTIONS, batch_api_response_parser, get_client
 from api_parallelizer import api_parallelizer
 from amazon_comprehend_api_formatting import KeyPhraseExtractionAPIFormatter
 
@@ -58,11 +42,7 @@ validate_column_input(text_column, input_columns_names)
 batch_kwargs = {
     "api_support_batch": True,
     "batch_size": batch_size,
-    "batch_result_key": BATCH_RESULT_KEY,
-    "batch_error_key": BATCH_ERROR_KEY,
-    "batch_index_key": BATCH_INDEX_KEY,
-    "batch_error_message_key": BATCH_ERROR_MESSAGE_KEY,
-    "batch_error_type_key": BATCH_ERROR_TYPE_KEY,
+    "batch_api_response_parser": batch_api_response_parser,
 }
 if text_language == "language_column":
     batch_kwargs = {"api_support_batch": False}
@@ -103,9 +83,7 @@ def call_api_key_phrase_extraction(
         return json.dumps(response)
     else:
         text_list = [str(r.get(text_column, "")).strip() for r in batch]
-        responses = client.batch_detect_key_phrases(
-            TextList=text_list, LanguageCode=text_language
-        )
+        responses = client.batch_detect_key_phrases(TextList=text_list, LanguageCode=text_language)
         return responses
 
 
@@ -123,10 +101,7 @@ df = api_parallelizer(
 )
 
 api_formatter = KeyPhraseExtractionAPIFormatter(
-    input_df=input_df,
-    num_key_phrases=num_key_phrases,
-    column_prefix=column_prefix,
-    error_handling=error_handling,
+    input_df=input_df, num_key_phrases=num_key_phrases, column_prefix=column_prefix, error_handling=error_handling,
 )
 output_df = api_formatter.format_df(df)
 

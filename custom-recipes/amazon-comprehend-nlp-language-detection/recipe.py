@@ -5,26 +5,10 @@ from retry import retry
 from ratelimit import limits, RateLimitException
 
 import dataiku
-from dataiku.customrecipe import (
-    get_recipe_config,
-    get_input_names_for_role,
-    get_output_names_for_role,
-)
+from dataiku.customrecipe import get_recipe_config, get_input_names_for_role, get_output_names_for_role
 
-from plugin_io_utils import (
-    ErrorHandlingEnum,
-    validate_column_input,
-    set_column_description,
-)
-from amazon_comprehend_api_client import (
-    API_EXCEPTIONS,
-    BATCH_RESULT_KEY,
-    BATCH_ERROR_KEY,
-    BATCH_INDEX_KEY,
-    BATCH_ERROR_MESSAGE_KEY,
-    BATCH_ERROR_TYPE_KEY,
-    get_client,
-)
+from plugin_io_utils import ErrorHandlingEnum, validate_column_input, set_column_description
+from amazon_comprehend_api_client import API_EXCEPTIONS, batch_api_response_parser, get_client
 from api_parallelizer import api_parallelizer
 from amazon_comprehend_api_formatting import LanguageDetectionAPIFormatter
 
@@ -56,11 +40,7 @@ column_prefix = "lang_detect_api"
 batch_kwargs = {
     "api_support_batch": True,
     "batch_size": batch_size,
-    "batch_result_key": BATCH_RESULT_KEY,
-    "batch_error_key": BATCH_ERROR_KEY,
-    "batch_index_key": BATCH_INDEX_KEY,
-    "batch_error_message_key": BATCH_ERROR_MESSAGE_KEY,
-    "batch_error_type_key": BATCH_ERROR_TYPE_KEY,
+    "batch_api_response_parser": batch_api_response_parser,
 }
 
 

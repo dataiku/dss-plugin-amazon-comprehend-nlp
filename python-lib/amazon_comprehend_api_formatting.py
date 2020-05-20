@@ -56,8 +56,7 @@ class GenericAPIFormatter:
         self.error_handling = error_handling
         self.api_column_names = build_unique_column_names(input_df, column_prefix)
         self.column_description_dict = {
-            v: API_COLUMN_NAMES_DESCRIPTION_DICT[k]
-            for k, v in self.api_column_names._asdict().items()
+            v: API_COLUMN_NAMES_DESCRIPTION_DICT[k] for k, v in self.api_column_names._asdict().items()
         }
 
     def format_row(self, row: Dict) -> Dict:
@@ -66,7 +65,7 @@ class GenericAPIFormatter:
     def format_df(self, df: pd.DataFrame) -> pd.DataFrame:
         logging.info("Formatting API results...")
         df = df.apply(func=self.format_row, axis=1)
-        df = move_api_columns_to_end(df, self.api_column_names)
+        df = move_api_columns_to_end(df, self.api_column_names, self.error_handling)
         logging.info("Formatting API results: Done.")
         return df
 
@@ -86,21 +85,13 @@ class LanguageDetectionAPIFormatter(GenericAPIFormatter):
         error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
     ):
         super().__init__(input_df, column_prefix, error_handling)
-        self.language_code_column = generate_unique(
-            "language_code", input_df.keys(), self.column_prefix
-        )
-        self.language_score_column = generate_unique(
-            "language_score", input_df.keys(), self.column_prefix
-        )
+        self.language_code_column = generate_unique("language_code", input_df.keys(), self.column_prefix)
+        self.language_score_column = generate_unique("language_score", input_df.keys(), self.column_prefix)
         self._compute_column_description()
 
     def _compute_column_description(self):
-        self.column_description_dict[
-            self.language_code_column
-        ] = "Language code from the API in ISO 639 format"
-        self.column_description_dict[
-            self.language_score_column
-        ] = "Confidence score of the API from 0 to 1"
+        self.column_description_dict[self.language_code_column] = "Language code from the API in ISO 639 format"
+        self.column_description_dict[self.language_score_column] = "Confidence score of the API from 0 to 1"
 
     def format_row(self, row: Dict) -> Dict:
         raw_response = row[self.api_column_names.response]
@@ -129,9 +120,7 @@ class SentimentAnalysisAPIFormatter(GenericAPIFormatter):
         error_handling: ErrorHandlingEnum = ErrorHandlingEnum.LOG,
     ):
         super().__init__(input_df, column_prefix, error_handling)
-        self.sentiment_prediction_column = generate_unique(
-            "prediction", input_df.keys(), column_prefix
-        )
+        self.sentiment_prediction_column = generate_unique("prediction", input_df.keys(), column_prefix)
         self.sentiment_score_column_dict = {
             p: generate_unique("score_" + p.lower(), input_df.keys(), column_prefix)
             for p in ["Positive", "Neutral", "Negative", "Mixed"]
@@ -143,9 +132,7 @@ class SentimentAnalysisAPIFormatter(GenericAPIFormatter):
             self.sentiment_prediction_column
         ] = "Sentiment prediction from the API (POSITIVE/NEUTRAL/NEGATIVE/MIXED)"
         for prediction, column_name in self.sentiment_score_column_dict.items():
-            self.column_description_dict[
-                column_name
-            ] = "Confidence score in the {} prediction from 0 to 1".format(
+            self.column_description_dict[column_name] = "Confidence score in the {} prediction from 0 to 1".format(
                 prediction.upper()
             )
 
@@ -185,12 +172,10 @@ class NamedEntityRecognitionAPIFormatter(GenericAPIFormatter):
 
     def _compute_column_description(self):
         for n, m in EntityTypeEnum.__members__.items():
-            entity_type_column = generate_unique(
-                "entity_type_" + n.lower(), self.input_df.keys(), self.column_prefix
+            entity_type_column = generate_unique("entity_type_" + n.lower(), self.input_df.keys(), self.column_prefix)
+            self.column_description_dict[entity_type_column] = "List of '{}' entities recognized by the API".format(
+                str(m.value)
             )
-            self.column_description_dict[
-                entity_type_column
-            ] = "List of '{}' entities recognized by the API".format(str(m.value))
 
     def format_row(self, row: Dict) -> Dict:
         raw_response = row[self.api_column_names.response]
@@ -198,14 +183,11 @@ class NamedEntityRecognitionAPIFormatter(GenericAPIFormatter):
         entities = response.get("Entities", [])
         selected_entity_types = sorted([e.name for e in self.entity_types])
         for n in selected_entity_types:
-            entity_type_column = generate_unique(
-                "entity_type_" + n.lower(), row.keys(), self.column_prefix
-            )
+            entity_type_column = generate_unique("entity_type_" + n.lower(), row.keys(), self.column_prefix)
             row[entity_type_column] = [
                 e.get("Text")
                 for e in entities
-                if e.get("Type", "") == n
-                and float(e.get("Score", 0)) >= self.minimum_score
+                if e.get("Type", "") == n and float(e.get("Score", 0)) >= self.minimum_score
             ]
             if len(row[entity_type_column]) == 0:
                 row[entity_type_column] = ""
@@ -234,36 +216,24 @@ class KeyPhraseExtractionAPIFormatter(GenericAPIFormatter):
     def _compute_column_description(self):
         for n in range(self.num_key_phrases):
             keyphrase_column = generate_unique(
-                "keyphrase_" + str(n + 1) + "_text",
-                self.input_df.keys(),
-                self.column_prefix,
+                "keyphrase_" + str(n + 1) + "_text", self.input_df.keys(), self.column_prefix,
             )
             confidence_column = generate_unique(
-                "keyphrase_" + str(n + 1) + "_confidence",
-                self.input_df.keys(),
-                self.column_prefix,
+                "keyphrase_" + str(n + 1) + "_confidence", self.input_df.keys(), self.column_prefix,
             )
-            self.column_description_dict[
-                keyphrase_column
-            ] = "Keyphrase {} extracted by the API".format(str(n + 1))
-            self.column_description_dict[
-                confidence_column
-            ] = "Confidence score in Keyphrase {} from 0 to 1".format(str(n + 1))
+            self.column_description_dict[keyphrase_column] = "Keyphrase {} extracted by the API".format(str(n + 1))
+            self.column_description_dict[confidence_column] = "Confidence score in Keyphrase {} from 0 to 1".format(
+                str(n + 1)
+            )
 
     def format_row(self, row: Dict) -> Dict:
         raw_response = row[self.api_column_names.response]
         response = safe_json_loads(raw_response, self.error_handling)
-        key_phrases = sorted(
-            response.get("KeyPhrases", []), key=lambda x: x.get("Score"), reverse=True
-        )
+        key_phrases = sorted(response.get("KeyPhrases", []), key=lambda x: x.get("Score"), reverse=True)
         for n in range(self.num_key_phrases):
-            keyphrase_column = generate_unique(
-                "keyphrase_" + str(n + 1) + "_text", row.keys(), self.column_prefix
-            )
+            keyphrase_column = generate_unique("keyphrase_" + str(n + 1) + "_text", row.keys(), self.column_prefix)
             confidence_column = generate_unique(
-                "keyphrase_" + str(n + 1) + "_confidence",
-                row.keys(),
-                self.column_prefix,
+                "keyphrase_" + str(n + 1) + "_confidence", row.keys(), self.column_prefix,
             )
             if len(key_phrases) > n:
                 row[keyphrase_column] = key_phrases[n].get("Text", "")
