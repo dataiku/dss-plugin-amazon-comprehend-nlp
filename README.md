@@ -1,4 +1,5 @@
 # Amazon Comprehend NLP Plugin
+https://img.shields.io/github/v/release/dataiku/dss-plugin-amazon-comprehend-nlp
 
 This Dataiku DSS plugin provides several recipes to call [Amazon Comprehend APIs](https://aws.amazon.com/comprehend/).
 
