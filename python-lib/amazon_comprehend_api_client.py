@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Module with utility functions to call the Amazon Comprehend API"""
+
 import logging
 import json
 from typing import Dict, List, Union, NamedTuple

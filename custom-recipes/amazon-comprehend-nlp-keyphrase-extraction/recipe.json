@@ -129,6 +129,15 @@
             "mandatory": true
         },
         {
+            "name": "num_key_phrases",
+            "label": "Number of key phrases",
+            "type": "INT",
+            "mandatory": true,
+            "defaultValue": 3,
+            "minI": 1,
+            "maxI": 100
+        },
+        {
             "name": "separator_advanced",
             "label": "Advanced",
             "type": "SEPARATOR"
@@ -140,21 +149,10 @@
             "defaultValue": false
         },
         {
-            "name": "num_key_phrases",
-            "label": "Number of key phrases",
-            "description": "Number of key phrases to extract from the API response",
-            "visibilityCondition": "model.expert == true",
-            "type": "INT",
-            "mandatory": true,
-            "defaultValue": 3,
-            "minI": 1,
-            "maxI": 100
-        },
-        {
             "name": "error_handling",
             "label": "Error handling",
             "type": "SELECT",
-            "visibilityCondition": "model.expert == true",
+            "visibilityCondition": "model.expert",
             "selectChoices": [
                 {
                     "value": "FAIL",
