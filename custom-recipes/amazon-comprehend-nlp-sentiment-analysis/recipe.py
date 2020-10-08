@@ -8,7 +8,8 @@ from ratelimit import limits, RateLimitException
 import dataiku
 from dataiku.customrecipe import get_recipe_config, get_input_names_for_role, get_output_names_for_role
 
-from plugin_io_utils import ErrorHandlingEnum, validate_column_input, set_column_description
+from plugin_io_utils import ErrorHandlingEnum, validate_column_input
+from dku_io_utils import set_column_description
 from amazon_comprehend_api_client import API_EXCEPTIONS, batch_api_response_parser, get_client
 from api_parallelizer import api_parallelizer
 from amazon_comprehend_api_formatting import SentimentAnalysisAPIFormatter
