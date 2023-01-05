@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 from typing import List, Dict, AnyStr
 
-from retry import retry
 from ratelimit import limits, RateLimitException
+from retry import retry
 
 import dataiku
 from dataiku.customrecipe import get_recipe_config, get_input_names_for_role, get_output_names_for_role
 
-from plugin_io_utils import ErrorHandlingEnum, validate_column_input
-from dku_io_utils import set_column_description
 from amazon_comprehend_api_client import API_EXCEPTIONS, batch_api_response_parser, get_client
-from api_parallelizer import api_parallelizer
 from amazon_comprehend_api_formatting import LanguageDetectionAPIFormatter
-
+from dkulib.dku_io_utils import set_column_descriptions
+from dkulib.parallelizer import DataFrameParallelizer
+from plugin_io_utils import ErrorHandlingEnum, validate_column_input
 
 # ==============================================================================
 # SETUP
@@ -39,16 +38,14 @@ input_df = input_dataset.get_dataframe()
 client = get_client(api_configuration_preset)
 column_prefix = "lang_detect_api"
 batch_kwargs = {
-    "api_support_batch": True,
+    "batch_support": True,
     "batch_size": batch_size,
-    "batch_api_response_parser": batch_api_response_parser,
+    "batch_response_parser": batch_api_response_parser,
 }
-
 
 # ==============================================================================
 # RUN
 # ==============================================================================
-
 
 @retry((RateLimitException, OSError), delay=api_quota_period, tries=5)
 @limits(calls=api_quota_rate_limit, period=api_quota_period)
@@ -58,15 +55,18 @@ def call_api_language_detection(batch: List[Dict], text_column: AnyStr) -> List[
     return responses
 
 
-df = api_parallelizer(
-    input_df=input_df,
-    api_call_function=call_api_language_detection,
-    api_exceptions=API_EXCEPTIONS,
-    column_prefix=column_prefix,
-    text_column=text_column,
-    parallel_workers=parallel_workers,
+df_parallelizer = DataFrameParallelizer(
+    function=call_api_language_detection,
     error_handling=error_handling,
+    exceptions_to_catch=API_EXCEPTIONS,
+    parallel_workers=parallel_workers,
+    output_column_prefix=column_prefix,
     **batch_kwargs
+)
+
+df = df_parallelizer.run(
+    input_df,
+    text_column=text_column,
 )
 
 api_formatter = LanguageDetectionAPIFormatter(
@@ -75,8 +75,8 @@ api_formatter = LanguageDetectionAPIFormatter(
 output_df = api_formatter.format_df(df)
 
 output_dataset.write_with_schema(output_df)
-set_column_description(
+set_column_descriptions(
     input_dataset=input_dataset,
     output_dataset=output_dataset,
-    column_description_dict=api_formatter.column_description_dict,
+    column_descriptions=api_formatter.column_description_dict,
 )
