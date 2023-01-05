@@ -7,12 +7,11 @@ from retry import retry
 import dataiku
 from dataiku.customrecipe import get_recipe_config, get_input_names_for_role, get_output_names_for_role
 
-from plugin_io_utils import ErrorHandlingEnum, validate_column_input
-from dkulib.dku_io_utils import set_column_descriptions
-from dkulib.parallelizer import DataFrameParallelizer
 from amazon_comprehend_api_client import API_EXCEPTIONS, batch_api_response_parser, get_client
 from amazon_comprehend_api_formatting import LanguageDetectionAPIFormatter
-
+from dkulib.dku_io_utils import set_column_descriptions
+from dkulib.parallelizer import DataFrameParallelizer
+from plugin_io_utils import ErrorHandlingEnum, validate_column_input
 
 # ==============================================================================
 # SETUP
@@ -44,11 +43,9 @@ batch_kwargs = {
     "batch_response_parser": batch_api_response_parser,
 }
 
-
 # ==============================================================================
 # RUN
 # ==============================================================================
-
 
 @retry((RateLimitException, OSError), delay=api_quota_period, tries=5)
 @limits(calls=api_quota_rate_limit, period=api_quota_period)

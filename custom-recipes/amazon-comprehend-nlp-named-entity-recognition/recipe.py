@@ -14,7 +14,6 @@ from dkulib.dku_io_utils import set_column_descriptions
 from dkulib.parallelizer import DataFrameParallelizer
 from plugin_io_utils import ErrorHandlingEnum, validate_column_input
 
-
 # ==============================================================================
 # SETUP
 # ==============================================================================
@@ -56,11 +55,9 @@ input_df = input_dataset.get_dataframe()
 client = get_client(api_configuration_preset)
 column_prefix = "entity_api"
 
-
 # ==============================================================================
 # RUN
 # ==============================================================================
-
 
 @retry((RateLimitException, OSError), delay=api_quota_period, tries=5)
 @limits(calls=api_quota_rate_limit, period=api_quota_period)

@@ -52,11 +52,9 @@ input_df = input_dataset.get_dataframe()
 client = get_client(api_configuration_preset)
 column_prefix = "keyphrase_api"
 
-
 # ==============================================================================
 # RUN
 # ==============================================================================
-
 
 @retry((RateLimitException, OSError), delay=api_quota_period, tries=5)
 @limits(calls=api_quota_rate_limit, period=api_quota_period)
