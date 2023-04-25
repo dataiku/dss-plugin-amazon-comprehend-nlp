@@ -8,7 +8,7 @@
 		"PYTHON310",
 		"PYTHON311"
 	],
-	"corePackageSet": "AUTO",
+	"corePackagesSet": "AUTO",
 	"forceConda": false,
 	"installCorePackages": true,
 	"installJupyterSupport": false
