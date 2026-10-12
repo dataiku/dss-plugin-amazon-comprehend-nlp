@@ -1,19 +1,19 @@
 {
-    "id": "amazon-comprehend-nlp",
-    "version": "1.1.0",
-    "meta": {
-        "label": "Amazon Comprehend NLP",
-        "category": "Natural Language Processing",
-        "description": "Use Amazon Comprehend APIs to perform Language Detection, Sentiment Analysis, Named Entity Recognition and Key Phrase Extraction",
-        "author": "Dataiku (Alex COMBESSIE, Joachim ZENTICI)",
-        "icon": "icon-amazon-comprehend icon-cloud",
-        "licenseInfo": "Apache Software License",
-        "url": "https://www.dataiku.com/product/plugins/amazon-comprehend-nlp/",
-        "tags": [
-            "AWS",
-            "Cloud",
-            "NLP"
-        ],
-        "supportLevel": "TIER2_SUPPORT"
-    }
+  "id": "amazon-comprehend-nlp",
+  "version": "1.2.0",
+  "meta": {
+    "label": "Amazon Comprehend NLP",
+    "category": "Natural Language Processing",
+    "description": "Use Amazon Comprehend APIs to perform Language Detection, Sentiment Analysis, Named Entity Recognition and Key Phrase Extraction",
+    "author": "Dataiku (Alex COMBESSIE, Joachim ZENTICI)",
+    "icon": "icon-amazon-comprehend icon-cloud",
+    "licenseInfo": "Apache Software License",
+    "url": "https://www.dataiku.com/product/plugins/amazon-comprehend-nlp/",
+    "tags": [
+      "AWS",
+      "Cloud",
+      "NLP"
+    ],
+    "supportLevel": "TIER2_SUPPORT"
+  }
 }
